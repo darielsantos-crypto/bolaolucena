@@ -1,5 +1,4 @@
 <!doctype html>
-
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
@@ -62,25 +61,6 @@
     .date{font-weight:900;text-align:center;margin:12px 0 4px;color:#fff;font-size:1.02rem}.hint{text-align:center;color:rgba(255,255,255,.92);font-weight:700;margin:0 auto 14px;max-width:720px}
     .card-footer{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}.play{min-width:210px}.disabled{opacity:.58;cursor:not-allowed;box-shadow:none}.disabled:hover{transform:none;filter:none}
     .logo-footer{display:block;width:min(46vw,210px);margin:28px auto 0;filter:drop-shadow(0 5px 8px rgba(0,0,0,.12))}
-    .music-toggle{
-      position:fixed;
-      top:calc(14px + env(safe-area-inset-top));
-      right:14px;
-      z-index:60;
-      width:46px;
-      height:46px;
-      border-radius:50%;
-      background:rgba(0,52,24,.72);
-      color:#fff;
-      border:2px solid rgba(255,224,0,.88);
-      box-shadow:0 10px 22px rgba(0,0,0,.22);
-      display:grid;
-      place-items:center;
-      font-size:1.15rem;
-      backdrop-filter:blur(8px);
-    }
-    .music-toggle:hover{filter:brightness(1.08);transform:translateY(-1px)}
-    .music-toggle.muted{background:rgba(0,0,0,.58);border-color:rgba(255,255,255,.45)}
     dialog,.modal{border:0}.overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);z-index:30;padding:16px}.overlay.show{display:flex}.modal{width:min(960px,100%);max-height:min(92vh,980px);overflow:auto;border-radius:32px;box-shadow:0 30px 85px rgba(0,0,0,.58);position:relative;background:#fff}.modal.green{background:#08732a url('assets/fundo-palpite.png') center/cover no-repeat;color:white}.modal.blue{background:#0641ca url('assets/fundo-regulamento.png') center top/cover no-repeat;color:white}.modal.yellow{background:#ffd900 url('assets/fundo-amarelo.png') center/cover no-repeat;color:#06220f}.modal-content{padding:24px}.close{position:sticky;top:12px;float:right;z-index:2;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.66);color:white;font-size:24px;font-weight:900;display:grid;place-items:center;margin:8px 8px 0 0}.modal-title{text-align:center;margin:8px auto 20px;font-family:var(--font-title);font-size:clamp(2rem,5vw,3.5rem);line-height:.95;font-weight:900;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.22)}.modal.yellow .modal-title{color:#063f19;text-shadow:0 3px 0 rgba(255,255,255,.5)}.modal-logo{display:block;width:min(62vw,340px);margin:6px auto 10px;filter:drop-shadow(0 10px 16px rgba(0,0,0,.25))}
     .form-card{background:linear-gradient(135deg,rgba(255,255,255,.94),rgba(238,255,244,.9));backdrop-filter:blur(6px);color:#061d0c;border-radius:30px;padding:20px;border:3px solid var(--yellow);box-shadow:var(--shadow)}
     .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{display:grid;gap:7px}.field.full{grid-column:1/-1}.field label{font-weight:900;color:#064018;text-transform:uppercase;font-size:.86rem;letter-spacing:.4px}.field input,.field select{border:2px solid #064018;border-radius:14px;padding:13px 14px;background:#fff;color:#051c0c;outline:none;box-shadow:inset 0 1px 0 rgba(0,0,0,.05)}.field input:focus{border-color:#ffe000;box-shadow:0 0 0 4px rgba(255,224,0,.34)}
@@ -197,9 +177,6 @@
     <img class="logo-footer" src="assets/logo-lucena.png" alt="Lucena Infraestrutura" />
   </main>
 
-  <audio id="bgMusic" src="assets/musica-bolao.mp3" loop autoplay preload="auto"></audio>
-  <button class="music-toggle" id="musicToggle" type="button" aria-label="Silenciar música" title="Silenciar música">🔊</button>
-
   <div class="overlay" id="betOverlay" role="dialog" aria-modal="true">
     <div class="modal green">
       <button class="close" data-close="betOverlay">×</button>
@@ -251,10 +228,10 @@
           <h3>5. Como participar</h3>
           <ul><li>Selecione o card do jogo liberado.</li><li>Informe nome, matrícula e setor.</li><li>Defina o placar e selecione, nas listas oficiais, os jogadores correspondentes a cada gol do placar escolhido.</li><li>Envie o palpite e baixe o comprovante gerado pelo sistema.</li></ul>
           <h3>6. Pontuação</h3>
-          <table><thead><tr><th>Critério</th><th>Pontuação</th></tr></thead><tbody><tr><td>Acertou o resultado do jogo: vitória do Brasil, vitória do adversário ou empate</td><td><b>5 pontos</b></td></tr><tr><td>Acertou o placar exato</td><td><b>+10 pontos</b></td></tr><tr><td>Acertou jogador que fez gol</td><td><b>+5 pontos por gol acertado</b></td></tr></tbody></table>
-          <p><b>Regra do empate:</b> se o palpite for empate e o resultado oficial também for empate, soma 5 pontos pelo resultado, mesmo que o placar seja diferente. Exemplo: Brasil 1 x 1 Marrocos e resultado oficial Brasil 2 x 2 Marrocos = 5 pontos.</p>
-          <p><b>Regra do placar exato:</b> quando o placar bate exatamente, soma mais 10 pontos. Exemplo: Brasil 1 x 1 Marrocos e resultado oficial Brasil 1 x 1 Marrocos = 15 pontos antes dos jogadores.</p>
-          <p><b>Bônus de jogador:</b> só vale para quem acertou o placar exato. Cada gol/jogador acertado soma +5 pontos.</p>
+          <table><thead><tr><th>Critério</th><th>Pontuação</th></tr></thead><tbody><tr><td>Acertou o resultado do jogo, mas não acertou o placar exato</td><td><b>5 pontos</b></td></tr><tr><td>Acertou o placar exato</td><td><b>10 pontos</b></td></tr><tr><td>Acertou jogador que fez gol</td><td><b>+5 pontos por gol acertado</b></td></tr></tbody></table>
+          <p><b>Regra de não acúmulo:</b> quem acerta o placar exato recebe os 10 pontos do placar, e não soma os 5 pontos do resultado. A pontuação fica: <b>placar exato + bônus de jogadores</b>.</p>
+          <p><b>Bônus de jogador:</b> só vale para quem acertou o placar exato. Se o placar não estiver exato, os jogadores escolhidos não somam pontos.</p>
+          <p>Exemplo: se o palpite for 2 x 1, o resultado oficial for 2 x 1 e a pessoa acertar 3 jogadores, ela soma <b>10 + 15 = 25 pontos</b>. Se o palpite for 2 x 0 e o vencedor estiver correto, mas o placar estiver errado, soma apenas <b>5 pontos</b>.</p>
           <h3>7. Vencedor e premiação</h3>
           <p>Vence quem alcançar a maior pontuação acumulada ao final dos três jogos. Para concorrer à premiação final, o colaborador deverá participar dos três bolões. Em caso de empate na pontuação final, a organização poderá aplicar critério complementar de desempate.</p>
           <h3>8. Disposições gerais</h3>
@@ -281,7 +258,7 @@
                 <div class="field"><label>Placar adversário/Time B</label><input id="officialB" type="number" min="0"></div>
                 <div class="field full"><label>Jogadores que marcaram gol</label><div id="officialScorerFields" class="scorer-fields"></div></div>
               </div>
-              <div class="actions"><button class="btn btn-primary" id="saveOfficial">Salvar e recalcular</button><button class="btn btn-dark" id="exportCsv">Exportar CSV</button><button class="btn btn-dark" id="clearAllData">Zerar lista</button></div>
+              <div class="actions"><button class="btn btn-primary" id="saveOfficial">Salvar e recalcular</button><button class="btn btn-dark" id="exportCsv">Exportar CSV</button><button class="btn btn-dark" id="clearData">Limpar teste</button></div>
             </div>
           </details>
         </div>
@@ -302,29 +279,6 @@
             </div>
             <div class="actions">
               <button class="btn btn-primary" type="submit">Entrar</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <div class="overlay" id="consultOverlay" role="dialog" aria-modal="true">
-    <div class="modal yellow" style="max-width:560px;min-height:auto">
-      <button class="close" data-close="consultOverlay">×</button>
-      <div class="modal-content">
-        <h2 class="modal-title" style="font-size:2.15rem">Consultar placar</h2>
-        <div class="form-card">
-          <form id="consultForm">
-            <input type="hidden" id="consultGameId">
-            <div class="field full">
-              <label>Matrícula</label>
-              <input id="consultMatricula" inputmode="numeric" autocomplete="off" required>
-            </div>
-            <div class="notice">A consulta é liberada para quem já registrou palpite com a matrícula informada.</div>
-            <div class="actions">
-              <button class="btn btn-primary" type="submit">🏆 Ver placar</button>
             </div>
           </form>
         </div>
@@ -404,12 +358,6 @@
       if(error){ return { ok:false, error }; }
       return { ok:true };
     }
-    async function clearAllFromSupabase(){
-      if(!supabaseClient) return { ok:false, error:{message:'Supabase não configurado'} };
-      const { error } = await supabaseClient.rpc('bolao_apagar_todos_palpites', { p_senha: adminPassword });
-      if(error){ return { ok:false, error }; }
-      return { ok:true };
-    }
     async function validateAdminPassword(pass){
       if(!supabaseClient) return false;
       const { data, error } = await supabaseClient.rpc('bolao_validar_admin', { p_senha: pass });
@@ -442,28 +390,6 @@
     function openOverlay(id){ const overlay=$('#'+id); overlay.classList.add('show'); document.body.classList.add('modal-open'); overlay.scrollTop=0; const modal=overlay.querySelector('.modal'); if(modal) modal.scrollTop=0; }
     function closeOverlay(id){ $('#'+id).classList.remove('show'); document.body.classList.remove('modal-open'); }
 
-    function openConsult(gameId=''){
-      $('#consultGameId').value = gameId || '';
-      $('#consultMatricula').value = '';
-      openOverlay('consultOverlay');
-      setTimeout(()=>$('#consultMatricula')?.focus(), 120);
-    }
-    async function submitConsult(e){
-      e.preventDefault();
-      await syncFromSupabase();
-      const matricula = normalize($('#consultMatricula').value);
-      const gameId = $('#consultGameId').value;
-      const all = bets();
-      const hasBet = all.some(b => normalize(b.matricula) === matricula && (!gameId || b.gameId === gameId));
-      if(!hasBet){
-        toast(gameId ? 'Não encontramos palpite dessa matrícula neste jogo.' : 'Não encontramos palpite registrado para essa matrícula.');
-        return;
-      }
-      closeOverlay('consultOverlay');
-      renderRanking(gameId || null);
-      openOverlay('rankingOverlay');
-    }
-
     function renderGames(){
       const wrap = $('#games');
       wrap.innerHTML = GAMES.map(game=>{
@@ -471,7 +397,9 @@
         const open = st.type === 'open';
         const text = open ? 'Palpites encerram em' : st.type === 'locked' ? 'Libera em' : 'Status';
         const btn = open ? `<button class="btn btn-yellow play" data-bet="${game.id}">⚽ Fazer meu palpite</button>` : `<button class="btn btn-dark play disabled" disabled>${st.type==='closed'?'Bolão encerrado':'Aguardando o dia do jogo'}</button>`;
-        const rankingBtn = `<button class="btn btn-primary" data-consult="${game.id}">🏆 Consultar placar</button>`;
+        const rankingBtn = canViewRanking(game.id)
+          ? `<button class="btn btn-primary" data-ranking="${game.id}">🏆 Ver palpites</button>`
+          : `<button class="btn btn-primary disabled" disabled title="Envie seu palpite deste jogo para liberar a visualização.">🔒 Ver placar bloqueado</button>`;
         return `<article class="game-card ${st.type}" data-game-card="${game.id}">
           <div class="game-top"><span class="pill ${open?'open':''} ${st.isTest?'test':''} ${st.type==='closed'?'closed':''}">${st.label}</span><div class="count">${text}<span data-count="${game.id}">${st.end?diffLabel(st.end):'Bolão encerrado'}</span></div></div>
           <div class="match-line"><div class="team"><img src="${game.flagA}" alt="${game.a}">${game.a}</div><div class="versus">X</div><div class="team"><img src="${game.flagB}" alt="${game.b}">${game.b}</div></div>
@@ -480,7 +408,7 @@
         </article>`
       }).join('');
       $$('[data-bet]').forEach(b=>b.onclick=()=>openBet(b.dataset.bet));
-      $$('[data-consult]').forEach(b=>b.onclick=()=>openConsult(b.dataset.consult));
+      $$('[data-ranking]').forEach(b=>b.onclick=()=>{ renderRanking(b.dataset.ranking); openOverlay('rankingOverlay'); });
     }
     function tick(){
       GAMES.forEach(g=>{
@@ -568,65 +496,37 @@
       ctx.fillStyle='#ffdf00'; ctx.font='900 24px Arial'; ctx.textAlign='center'; ctx.fillText('Guarde este comprovante até a divulgação do resultado final.',600,710);
       const a=document.createElement('a'); a.download=`comprovante-${data.matricula}-${data.gameId}.png`; a.href=c.toDataURL('image/png'); a.click();
     }
-    function resultadoDoJogo(a, b){
-      a = Number(a);
-      b = Number(b);
-      if(a === b) return 'empate';
-      return a > b ? 'timeA' : 'timeB';
-    }
-
-    function contarAcertosDeJogadores(palpiteJogadores, oficialJogadores){
-      const oficiais = String(oficialJogadores || '').split(',').map(normalize).filter(Boolean);
-      const palpites = String(palpiteJogadores || '').split(',').map(normalize).filter(Boolean);
-
-      const contagemOficial = {};
-      oficiais.forEach(nome => {
-        contagemOficial[nome] = (contagemOficial[nome] || 0) + 1;
-      });
-
-      let acertos = 0;
-      palpites.forEach(nome => {
-        if(contagemOficial[nome] > 0){
-          acertos += 1;
-          contagemOficial[nome] -= 1;
-        }
-      });
-
-      return acertos;
-    }
-
     function pointsFor(b){
-      const r = results()[b.gameId];
-      if(!r) return {resultado:0, placar:0, jogador:0, total:0};
+      const r=results()[b.gameId]; if(!r) return {resultado:0,placar:0,jogador:0,total:0};
+      const palpiteResultado = Number(b.scoreA)===Number(b.scoreB) ? 'empate' : (Number(b.scoreA)>Number(b.scoreB) ? 'a' : 'b');
+      const oficialResultado = Number(r.a)===Number(r.b) ? 'empate' : (Number(r.a)>Number(r.b) ? 'a' : 'b');
+      const acertouResultado = palpiteResultado===oficialResultado;
+      const acertouPlacarExato = Number(b.scoreA)===Number(r.a) && Number(b.scoreB)===Number(r.b);
 
-      const palpiteA = Number(b.scoreA);
-      const palpiteB = Number(b.scoreB);
-      const oficialA = Number(r.a);
-      const oficialB = Number(r.b);
-
-      // 5 pontos: acertou o resultado do jogo.
-      // Vale para vitória do time A, vitória do time B ou empate.
-      // Ex.: 1x1 e 2x2 = empate, então soma 5.
-      const resultado = resultadoDoJogo(palpiteA, palpiteB) === resultadoDoJogo(oficialA, oficialB) ? 5 : 0;
-
-      // +10 pontos: acertou o placar exato.
-      // Ex.: 1x1 e 1x1 = soma 10, além dos 5 do resultado.
-      const placar = (palpiteA === oficialA && palpiteB === oficialB) ? 10 : 0;
-
-      // +5 por gol/jogador acertado.
-      // Só vale para quem acertou o placar exato.
+      let resultado = 0;
+      let placar = 0;
       let jogador = 0;
-      if(placar > 0){
-        const quantidadeAcertos = contarAcertosDeJogadores(b.scorer, r.scorers);
-        jogador = quantidadeAcertos * 5;
+
+      if(acertouPlacarExato){
+        placar = 10;
+
+        const oficiais = String(r.scorers||'').split(',').map(normalize).filter(Boolean);
+        const palpites = String(b.scorer||'').split(',').map(normalize).filter(Boolean);
+        const contagem = {};
+
+        oficiais.forEach(nome => contagem[nome] = (contagem[nome] || 0) + 1);
+
+        palpites.forEach(nome => {
+          if(contagem[nome] > 0){
+            jogador += 5;
+            contagem[nome] -= 1;
+          }
+        });
+      } else if(acertouResultado){
+        resultado = 5;
       }
 
-      return {
-        resultado,
-        placar,
-        jogador,
-        total: resultado + placar + jogador
-      };
+      return {resultado,placar,jogador,total:resultado+placar+jogador};
     }
     async function renderRanking(gameFilter=null, highlight=null){
       await syncFromSupabase();
@@ -653,92 +553,10 @@
       const csv=[header,...rows].map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(';')).join('\n');
       const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='palpites-bolao-lucena.csv'; a.click(); URL.revokeObjectURL(a.href);
     }
-    async function clearAllData(){
-      if(!adminAuthenticated){ toast('Acesso restrito.'); return; }
-      const ok = confirm('ATENÇÃO: isto vai apagar TODOS os palpites da lista no Supabase. Deseja continuar?');
-      if(!ok) return;
-      const ok2 = confirm('Confirme novamente: zerar a lista de participantes do bolão?');
-      if(!ok2) return;
+    function clearData(){ if(!adminAuthenticated){ toast('Acesso restrito.'); return; } if(confirm('Limpar somente os dados salvos neste navegador? No Supabase, os registros continuam salvos.')){ localStorage.removeItem(CONFIG.STORAGE_BETS); localStorage.removeItem(CONFIG.STORAGE_RESULTS); localStorage.removeItem(CONFIG.STORAGE_UNLOCKED); renderRanking(); renderGames(); updateTopRankingButton(); toast('Dados locais de teste limpos.'); } }
+    function updateTopRankingButton(){ const btn=$('#openRankingTop'); if(canViewRanking()){ btn.disabled=false; btn.classList.remove('disabled'); btn.title=''; } else { btn.disabled=true; btn.classList.add('disabled'); btn.title='Envie seu palpite para liberar o placar dos participantes.'; } }
 
-      const remote = await clearAllFromSupabase();
-      if(!remote.ok){
-        const msg = String(remote.error?.message || remote.error?.details || remote.error?.hint || 'Erro desconhecido.');
-        if(msg.toLowerCase().includes('senha')){
-          toast('Senha administrativa inválida. Entre novamente na área de apuração.');
-        } else if(msg.toLowerCase().includes('could not find') || msg.toLowerCase().includes('schema cache') || msg.toLowerCase().includes('function')){
-          toast('Função ainda não disponível no cache do Supabase. Rode o SQL final e aguarde alguns segundos.');
-        } else {
-          toast('Erro ao zerar lista: ' + msg.slice(0, 120));
-        }
-        console.error('Erro ao zerar lista:', remote.error);
-        return;
-      }
-
-      localStorage.removeItem(CONFIG.STORAGE_BETS);
-      localStorage.removeItem(CONFIG.STORAGE_UNLOCKED);
-      localStorage.removeItem('bolao_lucena_last_user');
-      await syncFromSupabase();
-      renderRanking();
-      renderGames();
-      updateTopRankingButton();
-      toast('Lista zerada com sucesso.');
-    }
-    function updateTopRankingButton(){ const btn=$('#openRankingTop'); btn.disabled=false; btn.classList.remove('disabled'); btn.title='Consulte o placar usando a matrícula já registrada em um palpite.'; }
-
-    function setupMusic(){
-      const audio = $('#bgMusic');
-      const btn = $('#musicToggle');
-      if(!audio || !btn) return;
-
-      audio.volume = 0.5;
-      audio.loop = true;
-      audio.autoplay = true;
-      audio.muted = false;
-
-      function renderMusicState(){
-        const isOff = audio.paused || audio.muted;
-        btn.textContent = isOff ? '🔇' : '🔊';
-        btn.classList.toggle('muted', isOff);
-        btn.title = isOff ? 'Ativar música' : 'Silenciar música';
-        btn.setAttribute('aria-label', isOff ? 'Ativar música' : 'Silenciar música');
-      }
-
-      async function startMusic(){
-        audio.muted = false;
-        audio.volume = 0.5;
-        try {
-          await audio.play();
-        } catch(e) {
-          // Alguns navegadores bloqueiam áudio automático com som.
-          // O sistema tenta novamente no primeiro toque do usuário.
-        }
-        renderMusicState();
-      }
-
-      btn.addEventListener('click', async ()=>{
-        if(audio.paused || audio.muted){
-          audio.muted = false;
-          audio.volume = 0.5;
-          try { await audio.play(); } catch(e) { toast('Toque na tela para ativar a música.'); }
-        } else {
-          audio.pause();
-          audio.muted = true;
-        }
-        renderMusicState();
-      });
-
-      document.addEventListener('pointerdown', ()=>{
-        if(audio.paused || audio.muted){
-          audio.muted = false;
-          audio.volume = 0.5;
-          audio.play().catch(()=>{});
-          setTimeout(renderMusicState, 120);
-        }
-      }, {once:true});
-
-      startMusic();
-    }
-
+    
     $('#adminDetails').addEventListener('toggle', e=>{
       if(!e.target.open) return;
       if(adminAuthenticated){ $('#adminPanel').style.display='block'; return; }
@@ -761,9 +579,9 @@
     });
 
     document.addEventListener('click', e=>{ const close=e.target.closest('[data-close]'); if(close) closeOverlay(close.dataset.close); });
-    $('#openRules').onclick=()=>openOverlay('rulesOverlay'); $('#openRankingTop').onclick=()=>openConsult(''); $('#betForm').onsubmit=submitBet; $('#consultForm').onsubmit=submitConsult; $('#saveOfficial').onclick=saveOfficial; $('#exportCsv').onclick=exportCsv; $('#clearAllData').onclick=clearAllData;
+    $('#openRules').onclick=()=>openOverlay('rulesOverlay'); $('#openRankingTop').onclick=()=>{ if(!canViewRanking()){ toast('Envie seu palpite primeiro para acompanhar o placar.'); return; } renderRanking(); openOverlay('rankingOverlay'); }; $('#betForm').onsubmit=submitBet; $('#saveOfficial').onclick=saveOfficial; $('#exportCsv').onclick=exportCsv; $('#clearData').onclick=clearData;
     $('#scoreA').addEventListener('input', updateBetScorerFields); $('#scoreB').addEventListener('input', updateBetScorerFields); $('#officialA').addEventListener('input', updateOfficialScorerFields); $('#officialB').addEventListener('input', updateOfficialScorerFields); $('#adminGame').addEventListener('change', updateOfficialScorerFields);
-    fillRules(); updateOfficialScorerFields(); setupMusic(); syncFromSupabase().then(()=>{ renderGames(); updateTopRankingButton(); }); setInterval(tick,1000); setInterval(()=>syncFromSupabase().then(renderGames),60000);
+    fillRules(); updateOfficialScorerFields(); syncFromSupabase().then(()=>{ renderGames(); updateTopRankingButton(); }); setInterval(tick,1000); setInterval(()=>syncFromSupabase().then(renderGames),60000);
   </script>
 </body>
 </html>
