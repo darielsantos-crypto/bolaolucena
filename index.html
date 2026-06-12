@@ -1,5 +1,4 @@
 <!doctype html>
-
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
@@ -290,6 +289,7 @@
   <div class="toast" id="toast">Mensagem</div>
   <script>
     const CONFIG = {
+      // TESTE INTERNO: ranking/placar liberado para todos. Depois podemos voltar o bloqueio por palpite.
       TESTE_PRIMEIRO_JOGO_ABERTO: true,
       VOTACAO_INICIO: '08:00',
       VOTACAO_FIM: '12:00',
@@ -398,9 +398,7 @@
         const open = st.type === 'open';
         const text = open ? 'Palpites encerram em' : st.type === 'locked' ? 'Libera em' : 'Status';
         const btn = open ? `<button class="btn btn-yellow play" data-bet="${game.id}">⚽ Fazer meu palpite</button>` : `<button class="btn btn-dark play disabled" disabled>${st.type==='closed'?'Bolão encerrado':'Aguardando o dia do jogo'}</button>`;
-        const rankingBtn = canViewRanking(game.id)
-          ? `<button class="btn btn-primary" data-ranking="${game.id}">🏆 Ver palpites</button>`
-          : `<button class="btn btn-primary disabled" disabled title="Envie seu palpite deste jogo para liberar a visualização.">🔒 Ver placar bloqueado</button>`;
+        const rankingBtn = `<button class="btn btn-primary" data-ranking="${game.id}">🏆 Ver palpites</button>`;
         return `<article class="game-card ${st.type}" data-game-card="${game.id}">
           <div class="game-top"><span class="pill ${open?'open':''} ${st.isTest?'test':''} ${st.type==='closed'?'closed':''}">${st.label}</span><div class="count">${text}<span data-count="${game.id}">${st.end?diffLabel(st.end):'Bolão encerrado'}</span></div></div>
           <div class="match-line"><div class="team"><img src="${game.flagA}" alt="${game.a}">${game.a}</div><div class="versus">X</div><div class="team"><img src="${game.flagB}" alt="${game.b}">${game.b}</div></div>
@@ -555,7 +553,7 @@
       const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='palpites-bolao-lucena.csv'; a.click(); URL.revokeObjectURL(a.href);
     }
     function clearData(){ if(!adminAuthenticated){ toast('Acesso restrito.'); return; } if(confirm('Limpar somente os dados salvos neste navegador? No Supabase, os registros continuam salvos.')){ localStorage.removeItem(CONFIG.STORAGE_BETS); localStorage.removeItem(CONFIG.STORAGE_RESULTS); localStorage.removeItem(CONFIG.STORAGE_UNLOCKED); renderRanking(); renderGames(); updateTopRankingButton(); toast('Dados locais de teste limpos.'); } }
-    function updateTopRankingButton(){ const btn=$('#openRankingTop'); if(canViewRanking()){ btn.disabled=false; btn.classList.remove('disabled'); btn.title=''; } else { btn.disabled=true; btn.classList.add('disabled'); btn.title='Envie seu palpite para liberar o placar dos participantes.'; } }
+    function updateTopRankingButton(){ const btn=$('#openRankingTop'); btn.disabled=false; btn.classList.remove('disabled'); btn.title=''; }
 
     
     $('#adminDetails').addEventListener('toggle', e=>{
@@ -580,9 +578,11 @@
     });
 
     document.addEventListener('click', e=>{ const close=e.target.closest('[data-close]'); if(close) closeOverlay(close.dataset.close); });
-    $('#openRules').onclick=()=>openOverlay('rulesOverlay'); $('#openRankingTop').onclick=()=>{ if(!canViewRanking()){ toast('Envie seu palpite primeiro para acompanhar o placar.'); return; } renderRanking(); openOverlay('rankingOverlay'); }; $('#betForm').onsubmit=submitBet; $('#saveOfficial').onclick=saveOfficial; $('#exportCsv').onclick=exportCsv; $('#clearData').onclick=clearData;
+    $('#openRules').onclick=()=>openOverlay('rulesOverlay'); $('#openRankingTop').onclick=()=>{ renderRanking(); openOverlay('rankingOverlay'); }; $('#betForm').onsubmit=submitBet; $('#saveOfficial').onclick=saveOfficial; $('#exportCsv').onclick=exportCsv; $('#clearData').onclick=clearData;
     $('#scoreA').addEventListener('input', updateBetScorerFields); $('#scoreB').addEventListener('input', updateBetScorerFields); $('#officialA').addEventListener('input', updateOfficialScorerFields); $('#officialB').addEventListener('input', updateOfficialScorerFields); $('#adminGame').addEventListener('change', updateOfficialScorerFields);
     fillRules(); updateOfficialScorerFields(); syncFromSupabase().then(()=>{ renderGames(); updateTopRankingButton(); }); setInterval(tick,1000); setInterval(()=>syncFromSupabase().then(renderGames),60000);
   </script>
 </body>
 </html>
+
+
