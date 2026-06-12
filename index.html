@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -55,7 +56,7 @@
     .game-card.locked{filter:saturate(.86);border-color:rgba(255,255,255,.46);background:linear-gradient(145deg,rgba(0,80,31,.83),rgba(0,54,24,.9))}
     .game-card.closed{background:linear-gradient(145deg,rgba(38,38,38,.92),rgba(0,54,24,.88));border-color:rgba(255,255,255,.52)}
     .game-card>*{position:relative}
-    .game-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}.pill{background:rgba(255,255,255,.16);color:white;border:1px solid rgba(255,255,255,.34);padding:7px 13px;border-radius:999px;font-weight:900;font-size:.86rem}.pill.open{background:var(--yellow);color:#064018;border-color:var(--yellow)}.pill.test{background:#fff;color:#053d18}.pill.closed{background:#333;color:#fff}
+    .game-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}.pill{background:rgba(255,255,255,.16);color:white;border:1px solid rgba(255,255,255,.34);padding:7px 13px;border-radius:999px;font-weight:900;font-size:.86rem}.pill.open{background:var(--yellow);color:#064018;border-color:var(--yellow)}.pill.closed{background:#333;color:#fff}
     .count{font-weight:900;color:#fff;text-align:right}.count span{display:block;color:var(--yellow);font-size:clamp(1rem,2.8vw,1.38rem);letter-spacing:.5px;margin-top:2px}
     .match-line{display:flex;align-items:center;justify-content:center;gap:16px;text-align:center;flex-wrap:wrap}.team{display:flex;align-items:center;gap:10px;font-family:var(--font-title);font-weight:900;color:var(--yellow);font-size:clamp(1.35rem,4.7vw,2.55rem);text-transform:uppercase;text-shadow:0 3px 0 rgba(0,0,0,.2);letter-spacing:.5px}.team img{width:72px;height:72px;object-fit:contain;border-radius:50%;filter:drop-shadow(0 6px 8px rgba(0,0,0,.25));background:rgba(255,255,255,.08);padding:2px}.versus{font-family:var(--font-title);font-size:clamp(2.2rem,6vw,4.4rem);font-weight:900;color:var(--yellow);line-height:.85;text-shadow:0 3px 0 rgba(0,0,0,.2)}
     .date{font-weight:900;text-align:center;margin:12px 0 4px;color:#fff;font-size:1.02rem}.hint{text-align:center;color:rgba(255,255,255,.92);font-weight:700;margin:0 auto 14px;max-width:720px}
@@ -258,7 +259,7 @@
                 <div class="field"><label>Placar adversário/Time B</label><input id="officialB" type="number" min="0"></div>
                 <div class="field full"><label>Jogadores que marcaram gol</label><div id="officialScorerFields" class="scorer-fields"></div></div>
               </div>
-              <div class="actions"><button class="btn btn-primary" id="saveOfficial">Salvar e recalcular</button><button class="btn btn-dark" id="exportCsv">Exportar CSV</button><button class="btn btn-dark" id="clearData">Limpar teste</button></div>
+              <div class="actions"><button class="btn btn-primary" id="saveOfficial">Salvar e recalcular</button><button class="btn btn-dark" id="exportCsv">Exportar CSV</button><button class="btn btn-dark" id="clearData">Limpar registros</button></div>
             </div>
           </details>
         </div>
@@ -289,8 +290,7 @@
   <div class="toast" id="toast">Mensagem</div>
   <script>
     const CONFIG = {
-      // TESTE INTERNO: ranking/placar liberado para todos. Depois podemos voltar o bloqueio por palpite.
-      TESTE_PRIMEIRO_JOGO_ABERTO: true,
+      PRIMEIRO_JOGO_LIBERADO_AGORA: true,
       VOTACAO_INICIO: '08:00',
       VOTACAO_FIM: '12:00',
       TZ_LABEL: 'Horário de Brasília',
@@ -364,15 +364,21 @@
       const { data, error } = await supabaseClient.rpc('bolao_validar_admin', { p_senha: pass });
       return !error && data === true;
     }
+    async function clearSupabaseData(){
+      if(!supabaseClient) return { ok:false, error:{ message:'Supabase não configurado.' } };
+      const { error } = await supabaseClient.rpc('bolao_limpar_registros', { p_senha: adminPassword, p_limpar_resultados: true });
+      if(error) return { ok:false, error };
+      return { ok:true };
+    }
     function pad(n){ return String(n).padStart(2,'0'); }
     function parseLocal(date, time){ const [y,m,d]=date.split('-').map(Number); const [h,mi]=time.split(':').map(Number); return new Date(y,m-1,d,h,mi,0,0); }
     function openTime(game){ return parseLocal(game.date, CONFIG.VOTACAO_INICIO); }
     function closeTime(game){ return parseLocal(game.date, CONFIG.VOTACAO_FIM); }
     function now(){ return new Date(); }
-    function testClose(){ const d = new Date(); d.setHours(23,59,59,999); return d; }
+    function sessionClose(){ const d = new Date(); d.setHours(23,59,59,999); return d; }
     function status(game){
       const n = now();
-      if(CONFIG.TESTE_PRIMEIRO_JOGO_ABERTO && game.id === GAMES[0].id) return {type:'open', label:'Aberto para teste', end:testClose(), isTest:true};
+      if(CONFIG.PRIMEIRO_JOGO_LIBERADO_AGORA && game.id === GAMES[0].id) return {type:'open', label:'Bolão aberto', end:sessionClose()};
       const open = openTime(game), close = closeTime(game);
       if(n < open) return {type:'locked', label:'Aguardando abertura', end:open};
       if(n >= open && n < close) return {type:'open', label:'Bolão aberto', end:close};
@@ -400,9 +406,9 @@
         const btn = open ? `<button class="btn btn-yellow play" data-bet="${game.id}">⚽ Fazer meu palpite</button>` : `<button class="btn btn-dark play disabled" disabled>${st.type==='closed'?'Bolão encerrado':'Aguardando o dia do jogo'}</button>`;
         const rankingBtn = `<button class="btn btn-primary" data-ranking="${game.id}">🏆 Ver palpites</button>`;
         return `<article class="game-card ${st.type}" data-game-card="${game.id}">
-          <div class="game-top"><span class="pill ${open?'open':''} ${st.isTest?'test':''} ${st.type==='closed'?'closed':''}">${st.label}</span><div class="count">${text}<span data-count="${game.id}">${st.end?diffLabel(st.end):'Bolão encerrado'}</span></div></div>
+          <div class="game-top"><span class="pill ${open?'open':''} ${st.type==='closed'?'closed':''}">${st.label}</span><div class="count">${text}<span data-count="${game.id}">${st.end?diffLabel(st.end):'Bolão encerrado'}</span></div></div>
           <div class="match-line"><div class="team"><img src="${game.flagA}" alt="${game.a}">${game.a}</div><div class="versus">X</div><div class="team"><img src="${game.flagB}" alt="${game.b}">${game.b}</div></div>
-          <p class="date">${game.label} • ${game.time} • ${CONFIG.TZ_LABEL}</p><p class="hint">Votação disponível das ${CONFIG.VOTACAO_INICIO} às ${CONFIG.VOTACAO_FIM}. ${st.isTest?'Este primeiro jogo está liberado em modo teste.':''}</p>
+          <p class="date">${game.label} • ${game.time} • ${CONFIG.TZ_LABEL}</p><p class="hint">Votação disponível das ${CONFIG.VOTACAO_INICIO} às ${CONFIG.VOTACAO_FIM}.</p>
           <div class="card-footer">${btn}${rankingBtn}</div>
         </article>`
       }).join('');
@@ -552,7 +558,7 @@
       const csv=[header,...rows].map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(';')).join('\n');
       const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='palpites-bolao-lucena.csv'; a.click(); URL.revokeObjectURL(a.href);
     }
-    function clearData(){ if(!adminAuthenticated){ toast('Acesso restrito.'); return; } if(confirm('Limpar somente os dados salvos neste navegador? No Supabase, os registros continuam salvos.')){ localStorage.removeItem(CONFIG.STORAGE_BETS); localStorage.removeItem(CONFIG.STORAGE_RESULTS); localStorage.removeItem(CONFIG.STORAGE_UNLOCKED); renderRanking(); renderGames(); updateTopRankingButton(); toast('Dados locais de teste limpos.'); } }
+    function clearData(){ if(!adminAuthenticated){ toast('Acesso restrito.'); return; } if(confirm('Limpar somente os dados salvos neste navegador? No Supabase, os registros continuam salvos.')){ localStorage.removeItem(CONFIG.STORAGE_BETS); localStorage.removeItem(CONFIG.STORAGE_RESULTS); localStorage.removeItem(CONFIG.STORAGE_UNLOCKED); renderRanking(); renderGames(); updateTopRankingButton(); toast('Dados locais de registro limpos.'); } }
     function updateTopRankingButton(){ const btn=$('#openRankingTop'); btn.disabled=false; btn.classList.remove('disabled'); btn.title=''; }
 
     
@@ -584,5 +590,4 @@
   </script>
 </body>
 </html>
-
 
