@@ -250,9 +250,10 @@
           <h3>5. Como participar</h3>
           <ul><li>Selecione o card do jogo liberado.</li><li>Informe nome, matrícula e setor.</li><li>Defina o placar e selecione, nas listas oficiais, os jogadores correspondentes a cada gol do placar escolhido.</li><li>Envie o palpite e baixe o comprovante gerado pelo sistema.</li></ul>
           <h3>6. Pontuação</h3>
-          <table><thead><tr><th>Critério</th><th>Pontuação</th></tr></thead><tbody><tr><td>Acertou o resultado do jogo: vitória do Brasil, vitória do adversário ou empate</td><td><b>5 pontos</b></td></tr><tr><td>Acertou o placar exato</td><td><b>10 pontos</b></td></tr><tr><td>Acertou jogador que fez gol</td><td><b>+5 pontos por gol acertado</b></td></tr></tbody></table>
-          <p><b>Bônus de jogador:</b> só vale para quem acertou o placar exato. Se o placar não estiver exato, os jogadores escolhidos não somam pontos.</p>
-          <p>Exemplo: se o palpite for 1 x 1 e o resultado oficial for 2 x 2, o participante acerta o resultado empate e soma <b>5 pontos</b>, mas não recebe os 10 pontos do placar nem o bônus de jogadores.</p>
+          <table><thead><tr><th>Critério</th><th>Pontuação</th></tr></thead><tbody><tr><td>Acertou o resultado do jogo: vitória do Brasil, vitória do adversário ou empate</td><td><b>5 pontos</b></td></tr><tr><td>Acertou o placar exato</td><td><b>+10 pontos</b></td></tr><tr><td>Acertou jogador que fez gol</td><td><b>+5 pontos por gol acertado</b></td></tr></tbody></table>
+          <p><b>Regra do empate:</b> se o palpite for empate e o resultado oficial também for empate, soma 5 pontos pelo resultado, mesmo que o placar seja diferente. Exemplo: Brasil 1 x 1 Marrocos e resultado oficial Brasil 2 x 2 Marrocos = 5 pontos.</p>
+          <p><b>Regra do placar exato:</b> quando o placar bate exatamente, soma mais 10 pontos. Exemplo: Brasil 1 x 1 Marrocos e resultado oficial Brasil 1 x 1 Marrocos = 15 pontos antes dos jogadores.</p>
+          <p><b>Bônus de jogador:</b> só vale para quem acertou o placar exato. Cada gol/jogador acertado soma +5 pontos.</p>
           <h3>7. Vencedor e premiação</h3>
           <p>Vence quem alcançar a maior pontuação acumulada ao final dos três jogos. Para concorrer à premiação final, o colaborador deverá participar dos três bolões. Em caso de empate na pontuação final, a organização poderá aplicar critério complementar de desempate.</p>
           <h3>8. Disposições gerais</h3>
@@ -566,26 +567,65 @@
       ctx.fillStyle='#ffdf00'; ctx.font='900 24px Arial'; ctx.textAlign='center'; ctx.fillText('Guarde este comprovante até a divulgação do resultado final.',600,710);
       const a=document.createElement('a'); a.download=`comprovante-${data.matricula}-${data.gameId}.png`; a.href=c.toDataURL('image/png'); a.click();
     }
+    function resultadoDoJogo(a, b){
+      a = Number(a);
+      b = Number(b);
+      if(a === b) return 'empate';
+      return a > b ? 'timeA' : 'timeB';
+    }
+
+    function contarAcertosDeJogadores(palpiteJogadores, oficialJogadores){
+      const oficiais = String(oficialJogadores || '').split(',').map(normalize).filter(Boolean);
+      const palpites = String(palpiteJogadores || '').split(',').map(normalize).filter(Boolean);
+
+      const contagemOficial = {};
+      oficiais.forEach(nome => {
+        contagemOficial[nome] = (contagemOficial[nome] || 0) + 1;
+      });
+
+      let acertos = 0;
+      palpites.forEach(nome => {
+        if(contagemOficial[nome] > 0){
+          acertos += 1;
+          contagemOficial[nome] -= 1;
+        }
+      });
+
+      return acertos;
+    }
+
     function pointsFor(b){
-      const r=results()[b.gameId]; if(!r) return {resultado:0,placar:0,jogador:0,total:0};
-      const palpiteResultado = Number(b.scoreA)===Number(b.scoreB) ? 'empate' : (Number(b.scoreA)>Number(b.scoreB) ? 'a' : 'b');
-      const oficialResultado = Number(r.a)===Number(r.b) ? 'empate' : (Number(r.a)>Number(r.b) ? 'a' : 'b');
-      const resultado = palpiteResultado===oficialResultado ? 5 : 0;
-      const placar = Number(b.scoreA)===Number(r.a) && Number(b.scoreB)===Number(r.b) ? 10 : 0;
+      const r = results()[b.gameId];
+      if(!r) return {resultado:0, placar:0, jogador:0, total:0};
+
+      const palpiteA = Number(b.scoreA);
+      const palpiteB = Number(b.scoreB);
+      const oficialA = Number(r.a);
+      const oficialB = Number(r.b);
+
+      // 5 pontos: acertou o resultado do jogo.
+      // Vale para vitória do time A, vitória do time B ou empate.
+      // Ex.: 1x1 e 2x2 = empate, então soma 5.
+      const resultado = resultadoDoJogo(palpiteA, palpiteB) === resultadoDoJogo(oficialA, oficialB) ? 5 : 0;
+
+      // +10 pontos: acertou o placar exato.
+      // Ex.: 1x1 e 1x1 = soma 10, além dos 5 do resultado.
+      const placar = (palpiteA === oficialA && palpiteB === oficialB) ? 10 : 0;
+
+      // +5 por gol/jogador acertado.
+      // Só vale para quem acertou o placar exato.
       let jogador = 0;
       if(placar > 0){
-        const oficiais = String(r.scorers||'').split(',').map(normalize).filter(Boolean);
-        const palpites = String(b.scorer||'').split(',').map(normalize).filter(Boolean);
-        const contagem = {};
-        oficiais.forEach(nome => contagem[nome] = (contagem[nome] || 0) + 1);
-        palpites.forEach(nome => {
-          if(contagem[nome] > 0){
-            jogador += 5;
-            contagem[nome] -= 1;
-          }
-        });
+        const quantidadeAcertos = contarAcertosDeJogadores(b.scorer, r.scorers);
+        jogador = quantidadeAcertos * 5;
       }
-      return {resultado,placar,jogador,total:resultado+placar+jogador};
+
+      return {
+        resultado,
+        placar,
+        jogador,
+        total: resultado + placar + jogador
+      };
     }
     async function renderRanking(gameFilter=null, highlight=null){
       await syncFromSupabase();
