@@ -157,9 +157,16 @@
       .x-small{display:none}
     }
     @media print{.actions,.card-footer,.close,.admin{display:none!important}body{background:#fff}.modal{box-shadow:none}.overlay{position:static;display:block;background:#fff}}
+
+    .sound-toggle{position:fixed;top:14px;right:14px;z-index:20;background:linear-gradient(180deg,#fff36a,#ffdf00);color:#063d18;border:2px solid #063d18;border-radius:999px;padding:10px 14px;font-weight:900;box-shadow:0 10px 24px rgba(0,0,0,.22)}
+    .sound-toggle.muted{background:#002f15;color:#fff;border-color:#ffe000}
+    .gate-text{font-weight:800;text-align:center;line-height:1.35;margin:0 0 14px;color:#064018}
+    .admin-actions-clean{justify-content:center}
   </style>
 </head>
 <body>
+  <button class="sound-toggle muted" id="soundToggle" type="button">🔇 Som</button>
+  <audio id="bgMusic" src="assets/beat-brasil.mp3" loop preload="auto"></audio>
   <main class="page">
     <section class="hero">
       <img class="selo" src="assets/selo.png" alt="Bolão da Lucena 2026" />
@@ -224,7 +231,7 @@
           <h3>3. Jogos do bolão</h3>
           <table><thead><tr><th>Data</th><th>Jogo</th><th>Horário</th></tr></thead><tbody id="rulesGames"></tbody></table>
           <h3>4. Horário de votação</h3>
-          <p>O palpite de cada jogo ficará disponível somente no dia da partida, das <b>08h às 12h</b>, no horário de Brasília. Depois das 12h, o bolão do jogo será encerrado automaticamente e não aceitará novos registros, alterações ou substituições.</p>
+          <p>O primeiro jogo fica aberto a partir do dia anterior e encerra <b>30 minutos antes da partida</b>. Os demais jogos abrem <b>1 dia antes, às 17h</b>, e também encerram <b>30 minutos antes do horário oficial do jogo</b>, no horário de Brasília. Após o encerramento, não serão aceitos novos registros, alterações ou substituições.</p>
           <h3>5. Como participar</h3>
           <ul><li>Selecione o card do jogo liberado.</li><li>Informe nome, matrícula e setor.</li><li>Defina o placar e selecione, nas listas oficiais, os jogadores correspondentes a cada gol do placar escolhido.</li><li>Envie o palpite e baixe o comprovante gerado pelo sistema.</li></ul>
           <h3>6. Pontuação</h3>
@@ -258,9 +265,33 @@
                 <div class="field"><label>Placar adversário/Time B</label><input id="officialB" type="number" min="0"></div>
                 <div class="field full"><label>Jogadores que marcaram gol</label><div id="officialScorerFields" class="scorer-fields"></div></div>
               </div>
-              <div class="actions"><button class="btn btn-primary" id="saveOfficial">Salvar e recalcular</button><button class="btn btn-dark" id="exportCsv">Exportar CSV</button><button class="btn btn-dark" id="clearData">Limpar registros</button></div>
+              <div class="actions admin-actions-clean"><button class="btn btn-primary" id="saveOfficial">Salvar e recalcular</button><button class="btn btn-dark" id="exportCsv">Exportar CSV</button></div>
             </div>
           </details>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="overlay" id="rankingGateOverlay" role="dialog" aria-modal="true">
+    <div class="modal yellow" style="max-width:560px;min-height:auto">
+      <button class="close" data-close="rankingGateOverlay">×</button>
+      <div class="modal-content">
+        <img class="modal-logo" src="assets/selo.png" alt="Bolão da Lucena 2026">
+        <h2 class="modal-title" style="font-size:2.2rem">Acessar palpites</h2>
+        <div class="form-card">
+          <p class="gate-text">Informe sua matrícula para acessar. O placar só aparece para quem já registrou palpite no bolão.</p>
+          <form id="rankingGateForm">
+            <input type="hidden" id="rankingGateGame" />
+            <div class="field full">
+              <label>Matrícula</label>
+              <input id="rankingGateMatricula" inputmode="numeric" autocomplete="off" required>
+            </div>
+            <div class="actions">
+              <button class="btn btn-primary" type="submit">🏆 Ver palpites</button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -289,9 +320,9 @@
   <div class="toast" id="toast">Mensagem</div>
   <script>
     const CONFIG = {
-      PRIMEIRO_JOGO_LIBERADO_AGORA: true,
-      VOTACAO_INICIO: '08:00',
-      VOTACAO_FIM: '12:00',
+      PRIMEIRO_JOGO_ABRE_DIA_ANTERIOR_INTEIRO: true,
+      VOTACAO_ABERTURA_PADRAO: '17:00',
+      ENCERRA_MINUTOS_ANTES: 30,
       TZ_LABEL: 'Horário de Brasília',
       STORAGE_BETS: 'bolao_lucena_2026_bets_v1',
       STORAGE_RESULTS: 'bolao_lucena_2026_results_v1',
@@ -327,6 +358,8 @@
     let lastVoucher = null;
     let adminAuthenticated = false;
     let adminPassword = '';
+    let rankingAuthorizedMatricula = '';
+    let rankingAuthorizedGame = null;
     const supabaseClient = (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase) ? window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY) : null;
 
     function read(key, fallback){ try { return JSON.parse(localStorage.getItem(key)) ?? fallback } catch { return fallback } }
@@ -371,13 +404,26 @@
     }
     function pad(n){ return String(n).padStart(2,'0'); }
     function parseLocal(date, time){ const [y,m,d]=date.split('-').map(Number); const [h,mi]=time.split(':').map(Number); return new Date(y,m-1,d,h,mi,0,0); }
-    function openTime(game){ return parseLocal(game.date, CONFIG.VOTACAO_INICIO); }
-    function closeTime(game){ return parseLocal(game.date, CONFIG.VOTACAO_FIM); }
+    function openTime(game){
+      const base = parseLocal(game.date, game.time);
+      const d = new Date(base);
+      d.setDate(d.getDate() - 1);
+      if(CONFIG.PRIMEIRO_JOGO_ABRE_DIA_ANTERIOR_INTEIRO && game.id === GAMES[0].id){
+        d.setHours(0,0,0,0);
+      } else {
+        const [h,mi] = CONFIG.VOTACAO_ABERTURA_PADRAO.split(':').map(Number);
+        d.setHours(h,mi,0,0);
+      }
+      return d;
+    }
+    function closeTime(game){ const d = parseLocal(game.date, game.time); d.setMinutes(d.getMinutes() - CONFIG.ENCERRA_MINUTOS_ANTES); return d; }
     function now(){ return new Date(); }
-    function sessionClose(){ const d = new Date(); d.setHours(23,59,59,999); return d; }
+    function voteWindowLabel(game){
+      const o=openTime(game), c=closeTime(game);
+      return `Votação: ${o.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})} até ${c.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}.`;
+    }
     function status(game){
       const n = now();
-      if(CONFIG.PRIMEIRO_JOGO_LIBERADO_AGORA && game.id === GAMES[0].id) return {type:'open', label:'Bolão aberto', end:sessionClose()};
       const open = openTime(game), close = closeTime(game);
       if(n < open) return {type:'locked', label:'Aguardando abertura', end:open};
       if(n >= open && n < close) return {type:'open', label:'Bolão aberto', end:close};
@@ -407,12 +453,12 @@
         return `<article class="game-card ${st.type}" data-game-card="${game.id}">
           <div class="game-top"><span class="pill ${open?'open':''} ${st.type==='closed'?'closed':''}">${st.label}</span><div class="count">${text}<span data-count="${game.id}">${st.end?diffLabel(st.end):'Bolão encerrado'}</span></div></div>
           <div class="match-line"><div class="team"><img src="${game.flagA}" alt="${game.a}">${game.a}</div><div class="versus">X</div><div class="team"><img src="${game.flagB}" alt="${game.b}">${game.b}</div></div>
-          <p class="date">${game.label} • ${game.time} • ${CONFIG.TZ_LABEL}</p><p class="hint">Votação disponível das ${CONFIG.VOTACAO_INICIO} às ${CONFIG.VOTACAO_FIM}.</p>
+          <p class="date">${game.label} • ${game.time} • ${CONFIG.TZ_LABEL}</p><p class="hint">${voteWindowLabel(game)}</p>
           <div class="card-footer">${btn}${rankingBtn}</div>
         </article>`
       }).join('');
       $$('[data-bet]').forEach(b=>b.onclick=()=>openBet(b.dataset.bet));
-      $$('[data-ranking]').forEach(b=>b.onclick=()=>{ renderRanking(b.dataset.ranking); openOverlay('rankingOverlay'); });
+      $$('[data-ranking]').forEach(b=>b.onclick=()=>requestRankingAccess(b.dataset.ranking));
     }
     function tick(){
       GAMES.forEach(g=>{
@@ -431,7 +477,7 @@
       selectedGame = game;
       $('#gameId').value = game.id; $('#betTitle').textContent = `${game.a} x ${game.b}`;
       $('#teamAName').innerHTML = `<img src="${game.flagA}" alt=""> ${game.a}`; $('#teamBName').innerHTML = `<img src="${game.flagB}" alt=""> ${game.b}`;
-      $('#betCountdown').innerHTML = `Bolão aberto • encerra em <b>${diffLabel(st.end)}</b>`;
+      $('#betCountdown').innerHTML = `Bolão aberto • encerra em <b>${diffLabel(st.end)}</b><br><small>${voteWindowLabel(game)}</small>`;
       $('#betFormCard').style.display='block'; $('#voucherBox').style.display='none'; $('#betForm').reset();
       updateBetScorerFields();
       const last = localStorage.getItem('bolao_lucena_last_user');
@@ -488,7 +534,7 @@
     function showVoucher(data, game){
       $('#betFormCard').style.display='none'; const box=$('#voucherBox'); box.style.display='block';
       box.innerHTML = `<div class="voucher" id="voucherCard"><img src="assets/selo.png" style="width:220px;max-width:70%;height:auto" alt=""><h3>Comprovante de Palpite</h3><div class="code">${data.id}</div><div class="voucher-grid"><div class="voucher-item"><span>Participante</span>${data.nome}</div><div class="voucher-item"><span>Matrícula</span>${data.matricula}</div><div class="voucher-item"><span>Setor</span>${data.setor}</div><div class="voucher-item"><span>Jogo</span>${data.gameTitle}</div><div class="voucher-item"><span>Palpite</span>${game.a} ${data.scoreA} x ${data.scoreB} ${game.b}</div><div class="voucher-item"><span>Jogadores</span>${data.scorer || '—'}</div><div class="voucher-item"><span>Data do jogo</span>${data.gameDate}</div><div class="voucher-item"><span>Registrado em</span>${new Date(data.createdAt).toLocaleString('pt-BR')}</div></div><p><b>Guarde este comprovante.</b> Ele confirma o registro do seu palpite no Bolão da Lucena 2026.</p></div><div class="actions"><button class="btn btn-yellow" id="downloadVoucher">⬇️ Baixar comprovante</button><button class="btn btn-primary" id="goRanking">🏆 Acompanhar placar</button></div>`;
-      $('#downloadVoucher').onclick = ()=>downloadVoucher(data, game); $('#goRanking').onclick=()=>{ closeOverlay('betOverlay'); renderRanking(game.id, data.id); openOverlay('rankingOverlay'); };
+      $('#downloadVoucher').onclick = ()=>downloadVoucher(data, game); $('#goRanking').onclick=()=>{ closeOverlay('betOverlay'); rankingAuthorizedMatricula = data.matricula; rankingAuthorizedGame = game.id; renderRanking(game.id, data.id); openOverlay('rankingOverlay'); };
     }
     function downloadVoucher(data, game){
       const c=document.createElement('canvas'); c.width=1200; c.height=780; const ctx=c.getContext('2d');
@@ -532,13 +578,36 @@
 
       return {resultado,placar,jogador,total:resultado+placar+jogador};
     }
+    function maskMatricula(m){ const v=String(m||''); return v.length <= 2 ? v : '*'.repeat(Math.max(0,v.length-2)) + v.slice(-2); }
+    function hasBetForAccess(gameFilter, matricula){
+      const m = normalize(matricula);
+      return bets().some(b=>normalize(b.matricula)===m && (!gameFilter || b.gameId===gameFilter));
+    }
+    async function requestRankingAccess(gameFilter=null){
+      await syncFromSupabase();
+      if(adminAuthenticated){ rankingAuthorizedMatricula=''; rankingAuthorizedGame=gameFilter; renderRanking(gameFilter); openOverlay('rankingOverlay'); return; }
+      const last = localStorage.getItem('bolao_lucena_last_user');
+      if(last){ try{ const u=JSON.parse(last); if(u.matricula) $('#rankingGateMatricula').value=u.matricula; }catch{} }
+      $('#rankingGateGame').value = gameFilter || '';
+      openOverlay('rankingGateOverlay');
+      setTimeout(()=>$('#rankingGateMatricula')?.focus(), 150);
+    }
     async function renderRanking(gameFilter=null, highlight=null){
       await syncFromSupabase();
+      if(!adminAuthenticated){
+        if(!rankingAuthorizedMatricula || !hasBetForAccess(gameFilter, rankingAuthorizedMatricula)){
+          closeOverlay('rankingOverlay');
+          requestRankingAccess(gameFilter);
+          return;
+        }
+      }
       let all=bets(); if(gameFilter) all=all.filter(b=>b.gameId===gameFilter);
-      const rows=all.map(b=>({...b, pts:pointsFor(b)})).sort((a,b)=>b.pts.total-a.pts.total || new Date(a.createdAt)-new Date(b.createdAt));
+      const rows=all.map(b=>({...b, pts:pointsFor(b)})).sort((a,b)=> adminAuthenticated ? (b.pts.total-a.pts.total || new Date(a.createdAt)-new Date(b.createdAt)) : (new Date(a.createdAt)-new Date(b.createdAt)) );
       const title = gameFilter ? (GAMES.find(g=>g.id===gameFilter)?.a + ' x ' + GAMES.find(g=>g.id===gameFilter)?.b) : 'Todos os jogos';
       if(!rows.length){ $('#rankingContent').innerHTML=`<div class="empty">Ainda não há palpites registrados para ${title}.</div>`; return; }
-      $('#rankingContent').innerHTML = `<h3 style="text-align:center;margin:0 0 12px;color:#064018">${title}</h3><table class="ranking-table"><thead><tr><th>#</th><th>Nome</th><th>Matrícula</th><th>Setor</th><th>Jogo</th><th>Palpite</th><th>Jogadores</th><th>Pontos</th></tr></thead><tbody>${rows.map((b,i)=>`<tr class="${highlight===b.id?'own':''}"><td>${i+1}</td><td>${b.nome}</td><td>${b.matricula}</td><td>${b.setor}</td><td>${b.gameTitle}</td><td>${b.scoreA} x ${b.scoreB}</td><td>${b.scorer}</td><td>${b.pts.total}</td></tr>`).join('')}</tbody></table>`;
+      const pointsHead = adminAuthenticated ? '<th>Pontos</th>' : '';
+      const accessInfo = adminAuthenticated ? '<div class="notice" style="margin-top:0">Modo administrador: pontuação visível após apuração.</div>' : `<div class="notice" style="margin-top:0">Acesso liberado pela matrícula ${maskMatricula(rankingAuthorizedMatricula)}. A pontuação fica visível somente para a apuração administrativa.</div>`;
+      $('#rankingContent').innerHTML = `${accessInfo}<h3 style="text-align:center;margin:0 0 12px;color:#064018">${title}</h3><table class="ranking-table"><thead><tr><th>#</th><th>Nome</th><th>Matrícula</th><th>Setor</th><th>Jogo</th><th>Palpite</th><th>Jogadores</th>${pointsHead}</tr></thead><tbody>${rows.map((b,i)=>`<tr class="${highlight===b.id?'own':''}"><td>${i+1}</td><td>${b.nome}</td><td>${b.matricula}</td><td>${b.setor}</td><td>${b.gameTitle}</td><td>${b.scoreA} x ${b.scoreB}</td><td>${b.scorer}</td>${adminAuthenticated?`<td>${b.pts.total}</td>`:''}</tr>`).join('')}</tbody></table>`;
     }
     async function saveOfficial(){
       if(!adminAuthenticated){ toast('Acesso restrito.'); return; }
@@ -557,34 +626,7 @@
       const csv=[header,...rows].map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(';')).join('\n');
       const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='palpites-bolao-lucena.csv'; a.click(); URL.revokeObjectURL(a.href);
     }
-    async function clearData(){
-      if(!adminAuthenticated){ toast('Acesso restrito.'); return; }
-
-      const ok = confirm('Tem certeza que deseja apagar todos os palpites e resultados salvos no Supabase? Esta ação não pode ser desfeita.');
-      if(!ok) return;
-
-      const remote = await clearSupabaseData();
-      if(!remote.ok){
-        const msg = String(remote.error?.message || '');
-        if(msg.toLowerCase().includes('function') || msg.toLowerCase().includes('schema cache')){
-          toast('Função de limpeza não encontrada no Supabase. Rode o SQL da função antes.');
-        } else {
-          toast('Não foi possível limpar os registros no Supabase.');
-        }
-        return;
-      }
-
-      localStorage.removeItem(CONFIG.STORAGE_BETS);
-      localStorage.removeItem(CONFIG.STORAGE_RESULTS);
-      localStorage.removeItem(CONFIG.STORAGE_UNLOCKED);
-      localStorage.removeItem('bolao_lucena_last_user');
-
-      await syncFromSupabase();
-      renderRanking();
-      renderGames();
-      updateTopRankingButton();
-      toast('Registros apagados do Supabase com sucesso.');
-    }
+    function clearData(){ if(!adminAuthenticated){ toast('Acesso restrito.'); return; } if(confirm('Limpar somente os dados salvos neste navegador? No Supabase, os registros continuam salvos.')){ localStorage.removeItem(CONFIG.STORAGE_BETS); localStorage.removeItem(CONFIG.STORAGE_RESULTS); localStorage.removeItem(CONFIG.STORAGE_UNLOCKED); renderRanking(); renderGames(); updateTopRankingButton(); toast('Dados locais de registro limpos.'); } }
     function updateTopRankingButton(){ const btn=$('#openRankingTop'); btn.disabled=false; btn.classList.remove('disabled'); btn.title=''; }
 
     
@@ -607,12 +649,49 @@
       closeOverlay('adminPassOverlay');
       $('#adminDetails').open = true;
       $('#adminPanel').style.display = 'block';
+      if($('#rankingOverlay').classList.contains('show')) renderRanking(rankingAuthorizedGame);
     });
 
+
+    $('#rankingGateForm').addEventListener('submit', async e=>{
+      e.preventDefault();
+      await syncFromSupabase();
+      const matricula = $('#rankingGateMatricula').value.trim();
+      const gameFilter = $('#rankingGateGame').value || null;
+      if(!hasBetForAccess(gameFilter, matricula)){
+        toast(gameFilter ? 'Esta matrícula ainda não registrou palpite neste jogo.' : 'Esta matrícula ainda não possui palpite registrado.');
+        return;
+      }
+      rankingAuthorizedMatricula = matricula;
+      rankingAuthorizedGame = gameFilter;
+      closeOverlay('rankingGateOverlay');
+      renderRanking(gameFilter);
+      openOverlay('rankingOverlay');
+    });
+
+    function setSoundButton(){
+      const audio=$('#bgMusic'), btn=$('#soundToggle');
+      if(!audio || !btn) return;
+      btn.textContent = audio.muted || audio.paused ? '🔇 Som' : '🔊 Som';
+      btn.classList.toggle('muted', audio.muted || audio.paused);
+    }
+    async function startMusic(){
+      const audio=$('#bgMusic'); if(!audio) return;
+      try{ audio.volume=.45; audio.muted=false; await audio.play(); }catch(e){ audio.muted=true; try{ await audio.play(); }catch(_){} }
+      setSoundButton();
+    }
+    $('#soundToggle').addEventListener('click', async ()=>{
+      const audio=$('#bgMusic');
+      if(audio.paused || audio.muted){ audio.muted=false; audio.volume=.45; try{ await audio.play(); }catch(e){ toast('Toque novamente para ativar o som.'); } }
+      else { audio.muted=true; }
+      setSoundButton();
+    });
+    ['click','touchstart','keydown'].forEach(ev=>document.addEventListener(ev, ()=>{ const a=$('#bgMusic'); if(a && (a.paused || a.muted)) startMusic(); }, {once:true, passive:true}));
+
     document.addEventListener('click', e=>{ const close=e.target.closest('[data-close]'); if(close) closeOverlay(close.dataset.close); });
-    $('#openRules').onclick=()=>openOverlay('rulesOverlay'); $('#openRankingTop').onclick=()=>{ renderRanking(); openOverlay('rankingOverlay'); }; $('#betForm').onsubmit=submitBet; $('#saveOfficial').onclick=saveOfficial; $('#exportCsv').onclick=exportCsv; $('#clearData').onclick=clearData;
+    $('#openRules').onclick=()=>openOverlay('rulesOverlay'); $('#openRankingTop').onclick=()=>requestRankingAccess(); $('#betForm').onsubmit=submitBet; $('#saveOfficial').onclick=saveOfficial; $('#exportCsv').onclick=exportCsv;
     $('#scoreA').addEventListener('input', updateBetScorerFields); $('#scoreB').addEventListener('input', updateBetScorerFields); $('#officialA').addEventListener('input', updateOfficialScorerFields); $('#officialB').addEventListener('input', updateOfficialScorerFields); $('#adminGame').addEventListener('change', updateOfficialScorerFields);
-    fillRules(); updateOfficialScorerFields(); syncFromSupabase().then(()=>{ renderGames(); updateTopRankingButton(); }); setInterval(tick,1000); setInterval(()=>syncFromSupabase().then(renderGames),60000);
+    fillRules(); updateOfficialScorerFields(); startMusic(); syncFromSupabase().then(()=>{ renderGames(); updateTopRankingButton(); }); setInterval(tick,1000); setInterval(()=>syncFromSupabase().then(renderGames),60000);
   </script>
 </body>
 </html>
