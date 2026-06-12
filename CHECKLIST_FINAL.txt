@@ -1,0 +1,5 @@
+bolao_limpar_tudo_no_index: False
+funcao_certa_no_index: True
+musica: True
+placar: True
+missing_asset_refs: []

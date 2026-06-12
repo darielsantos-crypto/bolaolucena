@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Bolão da Lucena 2026</title>
+  <meta name="theme-color" content="#078927" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --green:#087f2a;
+      --green2:#10a13a;
+      --deep:#003b1b;
+      --dark:#012913;
+      --yellow:#ffe000;
+      --yellow2:#fff6a3;
+      --blue:#043ed0;
+      --white:#fff;
+      --red:#d80c33;
+      --shadow:0 22px 55px rgba(0,0,0,.24);
+      --radius:28px;
+      --font-title:'DK Magical Brush','Luckiest Guy','Cooper Black','Arial Black',Impact,sans-serif;
+      --font-body:'Century Gothic','CenturyGothic','AppleGothic','Trebuchet MS',Arial,sans-serif;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:var(--font-body);
+      color:#06220f;
+      min-height:100vh;
+      background:#f9d600 url('assets/fundo-amarelo.png') center top/cover fixed no-repeat;
+    }
+    body:before{content:"";position:fixed;inset:0;background:radial-gradient(circle at 50% 0%,rgba(255,255,255,.28),transparent 34%),linear-gradient(180deg,rgba(255,224,0,.04),rgba(0,80,31,.08));pointer-events:none;z-index:-1}
+    body.modal-open{overflow:hidden}
+    button,input,select{font:inherit}
+    button{cursor:pointer;border:0}
+    .page{width:min(100%,980px);margin:0 auto;min-height:100vh;padding:28px 18px 42px;position:relative}
+    .hero{text-align:center;padding:4px 0 12px}
+    .selo{width:min(72vw,500px);max-height:238px;object-fit:contain;filter:drop-shadow(0 16px 26px rgba(0,0,0,.25));animation:float 4.5s ease-in-out infinite}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    .headline{font-family:var(--font-title);font-weight:900;font-size:clamp(1.8rem,5.2vw,3.5rem);line-height:.98;margin:8px auto 6px;max-width:860px;color:#073e18;text-shadow:0 3px 0 rgba(255,255,255,.45),0 8px 18px rgba(0,0,0,.12);letter-spacing:.5px}
+    .subline{font-size:clamp(.95rem,2.2vw,1.18rem);margin:10px auto 16px;max-width:760px;color:#07411b;font-weight:700}
+    .actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:14px 0 24px}
+    .btn{border-radius:999px;padding:12px 20px;font-weight:900;letter-spacing:.2px;box-shadow:0 12px 25px rgba(0,0,0,.22);transition:.18s transform,.18s filter,.18s box-shadow;display:inline-flex;align-items:center;gap:8px;justify-content:center;text-transform:none}
+    .btn:hover{transform:translateY(-2px);filter:brightness(1.04);box-shadow:0 16px 30px rgba(0,0,0,.26)}
+    .btn-primary{background:linear-gradient(180deg,#0b8e2f,#006f24);color:white;border:2px solid var(--yellow)}
+    .btn-yellow{background:linear-gradient(180deg,#fff36a,#ffdf00);color:#063d18;border:2px solid #063d18}
+    .btn-dark{background:#002f15;color:white;border:2px solid rgba(255,255,255,.25)}
+    .score-badges{display:flex;justify-content:center;margin:8px auto 28px;width:100%}
+    .score-image{width:min(92vw,780px);height:auto;display:block;filter:drop-shadow(0 18px 28px rgba(0,0,0,.22));}
+    .games{display:grid;gap:18px;margin:12px auto 28px}
+    .game-card{position:relative;background:linear-gradient(145deg,rgba(0,126,43,.97),rgba(0,72,30,.98));border:3px solid rgba(255,224,0,.98);box-shadow:var(--shadow);border-radius:var(--radius);padding:20px;overflow:hidden;color:white}
+    .game-card:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at top left,rgba(255,255,255,.12),transparent 35%),linear-gradient(90deg,rgba(255,255,255,.05),transparent 25%,rgba(255,255,255,.04));pointer-events:none}
+    .game-card.locked{filter:saturate(.86);border-color:rgba(255,255,255,.46);background:linear-gradient(145deg,rgba(0,80,31,.83),rgba(0,54,24,.9))}
+    .game-card.closed{background:linear-gradient(145deg,rgba(38,38,38,.92),rgba(0,54,24,.88));border-color:rgba(255,255,255,.52)}
+    .game-card>*{position:relative}
+    .game-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}.pill{background:rgba(255,255,255,.16);color:white;border:1px solid rgba(255,255,255,.34);padding:7px 13px;border-radius:999px;font-weight:900;font-size:.86rem}.pill.open{background:var(--yellow);color:#064018;border-color:var(--yellow)}.pill.test{background:#fff;color:#053d18}.pill.closed{background:#333;color:#fff}
+    .count{font-weight:900;color:#fff;text-align:right}.count span{display:block;color:var(--yellow);font-size:clamp(1rem,2.8vw,1.38rem);letter-spacing:.5px;margin-top:2px}
+    .match-line{display:flex;align-items:center;justify-content:center;gap:16px;text-align:center;flex-wrap:wrap}.team{display:flex;align-items:center;gap:10px;font-family:var(--font-title);font-weight:900;color:var(--yellow);font-size:clamp(1.35rem,4.7vw,2.55rem);text-transform:uppercase;text-shadow:0 3px 0 rgba(0,0,0,.2);letter-spacing:.5px}.team img{width:72px;height:72px;object-fit:contain;border-radius:50%;filter:drop-shadow(0 6px 8px rgba(0,0,0,.25));background:rgba(255,255,255,.08);padding:2px}.versus{font-family:var(--font-title);font-size:clamp(2.2rem,6vw,4.4rem);font-weight:900;color:var(--yellow);line-height:.85;text-shadow:0 3px 0 rgba(0,0,0,.2)}
+    .date{font-weight:900;text-align:center;margin:12px 0 4px;color:#fff;font-size:1.02rem}.hint{text-align:center;color:rgba(255,255,255,.92);font-weight:700;margin:0 auto 14px;max-width:720px}
+    .card-footer{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}.play{min-width:210px}.disabled{opacity:.58;cursor:not-allowed;box-shadow:none}.disabled:hover{transform:none;filter:none}
+    .logo-footer{display:block;width:min(46vw,210px);margin:28px auto 0;filter:drop-shadow(0 5px 8px rgba(0,0,0,.12))}
+    .music-toggle{
+      position:fixed;
+      top:calc(14px + env(safe-area-inset-top));
+      right:14px;
+      z-index:60;
+      width:46px;
+      height:46px;
+      border-radius:50%;
+      background:rgba(0,52,24,.72);
+      color:#fff;
+      border:2px solid rgba(255,224,0,.88);
+      box-shadow:0 10px 22px rgba(0,0,0,.22);
+      display:grid;
+      place-items:center;
+      font-size:1.15rem;
+      backdrop-filter:blur(8px);
+    }
+    .music-toggle:hover{filter:brightness(1.08);transform:translateY(-1px)}
+    .music-toggle.muted{background:rgba(0,0,0,.58);border-color:rgba(255,255,255,.45)}
+    dialog,.modal{border:0}.overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);z-index:30;padding:16px}.overlay.show{display:flex}.modal{width:min(960px,100%);max-height:min(92vh,980px);overflow:auto;border-radius:32px;box-shadow:0 30px 85px rgba(0,0,0,.58);position:relative;background:#fff}.modal.green{background:#08732a url('assets/fundo-palpite.png') center/cover no-repeat;color:white}.modal.blue{background:#0641ca url('assets/fundo-regulamento.png') center top/cover no-repeat;color:white}.modal.yellow{background:#ffd900 url('assets/fundo-amarelo.png') center/cover no-repeat;color:#06220f}.modal-content{padding:24px}.close{position:sticky;top:12px;float:right;z-index:2;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.66);color:white;font-size:24px;font-weight:900;display:grid;place-items:center;margin:8px 8px 0 0}.modal-title{text-align:center;margin:8px auto 20px;font-family:var(--font-title);font-size:clamp(2rem,5vw,3.5rem);line-height:.95;font-weight:900;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.22)}.modal.yellow .modal-title{color:#063f19;text-shadow:0 3px 0 rgba(255,255,255,.5)}.modal-logo{display:block;width:min(62vw,340px);margin:6px auto 10px;filter:drop-shadow(0 10px 16px rgba(0,0,0,.25))}
+    .form-card{background:linear-gradient(135deg,rgba(255,255,255,.94),rgba(238,255,244,.9));backdrop-filter:blur(6px);color:#061d0c;border-radius:30px;padding:20px;border:3px solid var(--yellow);box-shadow:var(--shadow)}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{display:grid;gap:7px}.field.full{grid-column:1/-1}.field label{font-weight:900;color:#064018;text-transform:uppercase;font-size:.86rem;letter-spacing:.4px}.field input,.field select{border:2px solid #064018;border-radius:14px;padding:13px 14px;background:#fff;color:#051c0c;outline:none;box-shadow:inset 0 1px 0 rgba(0,0,0,.05)}.field input:focus{border-color:#ffe000;box-shadow:0 0 0 4px rgba(255,224,0,.34)}
+    .score-inputs{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:14px;margin-top:4px}.mini-team{display:flex;align-items:center;justify-content:center;gap:9px;font-family:var(--font-title);font-size:1.35rem;font-weight:900;color:#064018;text-transform:uppercase;letter-spacing:.3px}.mini-team img{width:48px;height:48px;border-radius:50%;object-fit:contain;background:rgba(0,125,43,.1);padding:2px}.score-box input{text-align:center;font-size:1.75rem;font-weight:900;min-height:60px}.x-small{font-family:var(--font-title);font-size:3rem;font-weight:900;color:#064018;margin-bottom:8px;line-height:1;text-shadow:0 2px 0 rgba(255,224,0,.7)}.notice{background:#053f1a;color:#fff;border-radius:16px;padding:13px 15px;margin:14px 0;font-weight:700;border:2px solid rgba(255,224,0,.72);line-height:1.25}.notice.countdown{display:flex;align-items:center;justify-content:center;text-align:center;font-size:.98rem}.scorer-fields{display:grid;gap:12px}.scorer-group{background:rgba(0,125,43,.08);border:2px solid rgba(6,64,24,.18);border-radius:18px;padding:12px}.scorer-group h4{margin:0 0 10px;font-size:.95rem;font-weight:900;color:#064018;text-transform:uppercase;letter-spacing:.4px}.scorer-list{display:grid;gap:10px}.scorer-row{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center}.scorer-row span{font-weight:800;color:#064018;font-size:.92rem}.scorer-row select{border:2px solid #064018;border-radius:14px;padding:12px 14px;background:#fff;color:#051c0c;outline:none;min-height:48px;width:100%}.scorer-row select:focus{border-color:#ffe000;box-shadow:0 0 0 4px rgba(255,224,0,.34)}.empty-goals{padding:14px;border:2px dashed rgba(6,64,24,.3);border-radius:16px;text-align:center;color:#355f46;font-weight:700;background:rgba(255,255,255,.65)}
+    .voucher{background:#fff;border:4px dashed #087d2b;border-radius:24px;padding:18px;color:#052311;margin:12px 0;text-align:center}.voucher h3{margin:0;color:#063f19;font-family:var(--font-title);font-size:2.05rem}.voucher .code{font-size:1.3rem;font-weight:1000;color:#063f19;background:#ffe000;padding:8px 12px;border-radius:12px;display:inline-block;margin:10px 0}.voucher-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;text-align:left;max-width:640px;margin:12px auto}.voucher-item{background:#f4f4dc;border-radius:12px;padding:10px;font-weight:800}.voucher-item span{display:block;font-weight:600;font-size:.85rem;color:#40624b}
+    .rules{background:rgba(0,0,0,.28);border-radius:26px;padding:18px;border:2px solid rgba(255,255,255,.25);line-height:1.55}.rules h3{color:#ffe000;margin:18px 0 6px;font-family:var(--font-title);font-size:1.45rem}.rules p,.rules li{font-size:1rem}.rules table,.ranking-table{width:100%;border-collapse:collapse;background:rgba(255,255,255,.92);color:#061d0c;border-radius:18px;overflow:hidden;margin:12px 0}.rules th,.rules td,.ranking-table th,.ranking-table td{padding:10px;border-bottom:1px solid rgba(0,0,0,.12);text-align:left}.rules th,.ranking-table th{background:#064018;color:#ffe000}.ranking-wrap{background:rgba(255,255,255,.88);border-radius:26px;padding:16px;overflow:auto}.ranking-table td{font-weight:700}.empty{text-align:center;font-weight:900;padding:24px;color:#064018}.own{outline:4px solid #ffe000;background:#fff7b3!important}.admin{margin-top:18px;padding:14px;border-radius:18px;background:rgba(0,0,0,.08)}
+    .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(120px);background:#06220f;color:#fff;padding:13px 16px;border-radius:999px;font-weight:900;box-shadow:var(--shadow);z-index:80;transition:.25s}.toast.show{transform:translateX(-50%) translateY(0)}
+    /* =========================
+       RESPONSIVO / MOBILE FIRST
+       ========================= */
+    img{max-width:100%;height:auto}
+    input,select,textarea{font-size:16px} /* evita zoom automático no iPhone */
+    .safe-bottom{height:env(safe-area-inset-bottom)}
+
+    @media (max-width: 860px){
+      body{background-attachment:scroll;background-position:center top}
+      .page{width:100%;padding:18px max(12px, env(safe-area-inset-left)) calc(34px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-right))}
+      .selo{width:min(82vw,390px);max-height:190px}
+      .headline{font-size:clamp(2rem,9vw,3.15rem);max-width:92vw;margin-top:4px}
+      .actions{gap:10px;margin:12px 0 18px}
+      .score-badges{display:flex;margin:6px auto 18px}
+      .score-image{width:min(96vw,620px);}
+      .game-card{padding:16px 13px;border-radius:24px;border-width:2px;box-shadow:0 15px 34px rgba(0,0,0,.2)}
+      .game-top{display:grid;grid-template-columns:1fr;justify-items:center;text-align:center;gap:8px;margin-bottom:12px}
+      .pill{font-size:.78rem;padding:7px 11px;max-width:100%}
+      .count{text-align:center;width:100%;font-size:.88rem}
+      .count span{font-size:1.05rem}
+      .match-line{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;flex-wrap:nowrap;width:100%}
+      .team{display:grid;grid-template-columns:1fr;justify-items:center;gap:5px;font-size:clamp(1rem,5vw,1.55rem);line-height:.95;min-width:0;word-break:normal;overflow-wrap:anywhere;text-align:center}
+      .team img{width:54px;height:54px}
+      .versus{font-size:clamp(2rem,10vw,3rem)}
+      .date{font-size:.9rem;line-height:1.25;margin:10px auto 4px}
+      .hint{font-size:.84rem;line-height:1.3;margin-bottom:12px}
+      .card-footer{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
+      .play,.card-footer .btn{min-width:0;width:100%;padding:12px 10px}
+      .logo-footer{width:min(48vw,170px);margin-top:22px}
+
+      .overlay{align-items:flex-start;padding:0;background:rgba(0,0,0,.75);overflow:auto}
+      .overlay.show{display:block}
+      .modal{width:100%;min-height:100dvh;max-height:none;border-radius:0;box-shadow:none;overflow:visible}
+      .modal-content{padding:14px 12px calc(28px + env(safe-area-inset-bottom))}
+      .close{position:sticky;top:10px;right:10px;float:right;width:42px;height:42px;margin:6px 6px 0 0;background:rgba(0,0,0,.72)}
+      .modal-logo{width:min(68vw,260px);margin:2px auto 6px}
+      .modal-title{font-size:clamp(2rem,10vw,3rem);margin:4px auto 14px}
+      .form-card{border-radius:24px;padding:15px 12px;border-width:2px;box-shadow:0 16px 36px rgba(0,0,0,.22)}
+      .form-grid,.voucher-grid{grid-template-columns:1fr;gap:12px}
+      .field.full{grid-column:auto}
+      .field label{font-size:.78rem;letter-spacing:.3px}
+      .field input,.field select{width:100%;padding:13px 12px;border-radius:13px;min-height:48px}
+      .score-inputs{grid-template-columns:1fr 42px 1fr;gap:8px;align-items:end}
+      .mini-team{font-size:clamp(.78rem,3.6vw,1rem);line-height:1;gap:5px;min-height:46px;display:grid;justify-items:center;text-align:center}
+      .mini-team img{width:40px;height:40px}
+      .score-box input{min-height:56px;font-size:1.5rem;padding:8px;text-align:center}
+      .x-small{display:block;font-size:2.3rem;margin:0 0 8px}
+      .notice{border-radius:14px;padding:12px;font-size:.9rem;line-height:1.28}
+      .notice.countdown{font-size:.88rem}
+      .voucher{padding:14px 12px;border-radius:20px;border-width:3px}
+      .voucher h3{font-size:1.65rem;line-height:1}
+      .voucher .code{font-size:1rem;max-width:100%;word-break:break-word}
+      .voucher-item{font-size:.9rem;word-break:break-word}
+      .rules{padding:14px;border-radius:22px;overflow-x:auto}
+      .rules h3{font-size:1.25rem}
+      .rules p,.rules li{font-size:.94rem}
+      .rules table,.ranking-table{min-width:620px;font-size:.86rem}
+      .ranking-wrap{padding:12px;border-radius:22px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+      .admin{padding:12px;border-radius:16px}
+      .toast{width:calc(100% - 24px);bottom:calc(12px + env(safe-area-inset-bottom));border-radius:18px;text-align:center;line-height:1.25}
+    }
+
+    @media (max-width: 430px){
+      .page{padding-left:10px;padding-right:10px}
+      .selo{width:min(88vw,310px);max-height:150px}
+      .headline{font-size:clamp(1.75rem,10vw,2.55rem);line-height:.94}
+      .score-badges{margin-top:4px;margin-bottom:16px}
+      .score-image{width:100%;}
+      .game-card{padding:14px 10px;border-radius:21px}
+      .match-line{gap:5px}
+      .team img{width:46px;height:46px}
+      .versus{font-size:2.25rem}
+      .btn{padding:12px 12px;font-size:.94rem}
+      .score-inputs{grid-template-columns:1fr 34px 1fr;gap:6px}
+      .mini-team img{width:36px;height:36px}
+      .mini-team{font-size:.78rem}
+      .x-small{font-size:2rem}
+      .score-box input{font-size:1.35rem;min-height:52px}
+      .modal-content{padding-left:10px;padding-right:10px}
+    }
+
+    @media (max-width: 340px){
+      .score-badges{display:flex}
+      .match-line{grid-template-columns:1fr;gap:4px}
+      .versus{line-height:.7}
+      .score-inputs{grid-template-columns:1fr;gap:8px}
+      .x-small{display:none}
+    }
+    @media print{.actions,.card-footer,.close,.admin{display:none!important}body{background:#fff}.modal{box-shadow:none}.overlay{position:static;display:block;background:#fff}}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <img class="selo" src="assets/selo.png" alt="Bolão da Lucena 2026" />
+      <h1 class="headline">Entre em campo com a Seleção Lucena!</h1>
+      <div class="actions">
+        <button class="btn btn-primary" id="openRules">📋 Consultar regulamento</button>
+        <button class="btn btn-yellow" id="openRankingTop">🏆 Acompanhar placar</button>
+      </div>
+      <div class="score-badges" aria-label="Pontuação do bolão">
+        <img class="score-image" src="assets/placar.png" alt="Pontuação do bolão: 5 pontos ao acertar o resultado do jogo, 10 pontos ao acertar o placar exato e mais 5 pontos por gol acertado, somente para quem acertou o placar exato.">
+      </div>
+    </section>
+
+    <section id="games" class="games"></section>
+    <img class="logo-footer" src="assets/logo-lucena.png" alt="Lucena Infraestrutura" />
+  </main>
+
+  <audio id="bgMusic" src="assets/musica-bolao.mp3" loop autoplay preload="auto"></audio>
+  <button class="music-toggle" id="musicToggle" type="button" aria-label="Silenciar música" title="Silenciar música">🔊</button>
+
+  <div class="overlay" id="betOverlay" role="dialog" aria-modal="true">
+    <div class="modal green">
+      <button class="close" data-close="betOverlay">×</button>
+      <div class="modal-content">
+        <img class="modal-logo" src="assets/selo.png" alt="Bolão da Lucena 2026">
+        <h2 class="modal-title" id="betTitle">Registrar palpite</h2>
+        <div class="form-card" id="betFormCard">
+          <div class="notice countdown" id="betCountdown">Bolão aberto.</div>
+          <form id="betForm">
+            <input type="hidden" id="gameId" />
+            <div class="form-grid">
+              <div class="field"><label>Nome completo</label><input id="nome" required></div>
+              <div class="field"><label>Matrícula</label><input id="matricula" required inputmode="numeric" autocomplete="off"></div>
+              <div class="field full"><label>Setor</label><input id="setor" required></div>
+              <div class="field full">
+                <label>Placar do jogo</label>
+                <div class="score-inputs">
+                  <div class="score-box"><div class="mini-team" id="teamAName"></div><input id="scoreA" type="number" inputmode="numeric" min="0" max="30" required></div>
+                  <div class="x-small">X</div>
+                  <div class="score-box"><div class="mini-team" id="teamBName"></div><input id="scoreB" type="number" inputmode="numeric" min="0" max="30" required></div>
+                </div>
+              </div>
+              <div class="field full"><label>Jogadores que farão gol</label><div id="scorerFields" class="scorer-fields"></div></div>
+            </div>
+            <div class="notice">Atenção: cada matrícula pode registrar apenas <b>1 palpite por jogo</b>. Confira tudo antes de enviar.</div>
+            <div class="actions"><button class="btn btn-primary" type="submit">⚽ Confirmar palpite</button></div>
+          </form>
+        </div>
+        <div id="voucherBox" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="rulesOverlay" role="dialog" aria-modal="true">
+    <div class="modal blue">
+      <button class="close" data-close="rulesOverlay">×</button>
+      <div class="modal-content">
+        <img class="modal-logo" src="assets/selo.png" alt="Bolão da Lucena 2026">
+        <h2 class="modal-title">Regulamento Oficial</h2>
+        <div class="rules">
+          <h3>1. Objetivo</h3>
+          <p>O Bolão da Lucena 2026 é uma ação interna, gratuita e recreativa, criada para movimentar a torcida nos jogos do Brasil e integrar os colaboradores em clima de Copa.</p>
+          <h3>2. Quem pode participar</h3>
+          <p>Podem participar colaboradores ativos da Lucena, com vínculo vigente até o encerramento dos jogos contemplados. A participação é pessoal, gratuita e exclusiva para o público interno.</p>
+          <h3>3. Jogos do bolão</h3>
+          <table><thead><tr><th>Data</th><th>Jogo</th><th>Horário</th></tr></thead><tbody id="rulesGames"></tbody></table>
+          <h3>4. Horário de votação</h3>
+          <p>O palpite de cada jogo ficará disponível somente no dia da partida, das <b>08h às 12h</b>, no horário de Brasília. Depois das 12h, o bolão do jogo será encerrado automaticamente e não aceitará novos registros, alterações ou substituições.</p>
+          <h3>5. Como participar</h3>
+          <ul><li>Selecione o card do jogo liberado.</li><li>Informe nome, matrícula e setor.</li><li>Defina o placar e selecione, nas listas oficiais, os jogadores correspondentes a cada gol do placar escolhido.</li><li>Envie o palpite e baixe o comprovante gerado pelo sistema.</li></ul>
+          <h3>6. Pontuação</h3>
+          <table><thead><tr><th>Critério</th><th>Pontuação</th></tr></thead><tbody><tr><td>Acertou o resultado do jogo: vitória do Brasil, vitória do adversário ou empate</td><td><b>5 pontos</b></td></tr><tr><td>Acertou o placar exato</td><td><b>10 pontos</b></td></tr><tr><td>Acertou jogador que fez gol</td><td><b>+5 pontos por gol acertado</b></td></tr></tbody></table>
+          <p><b>Bônus de jogador:</b> só vale para quem acertou o placar exato. Se o placar não estiver exato, os jogadores escolhidos não somam pontos.</p>
+          <p>Exemplo: se o palpite for 1 x 1 e o resultado oficial for 2 x 2, o participante acerta o resultado empate e soma <b>5 pontos</b>, mas não recebe os 10 pontos do placar nem o bônus de jogadores.</p>
+          <h3>7. Vencedor e premiação</h3>
+          <p>Vence quem alcançar a maior pontuação acumulada ao final dos três jogos. Para concorrer à premiação final, o colaborador deverá participar dos três bolões. Em caso de empate na pontuação final, a organização poderá aplicar critério complementar de desempate.</p>
+          <h3>8. Disposições gerais</h3>
+          <p>Ao participar, o colaborador aceita integralmente este regulamento. Situações não previstas serão avaliadas pela organização, que também fará a validação dos palpites, a conferência das pontuações e a divulgação do resultado final.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="rankingOverlay" role="dialog" aria-modal="true">
+    <div class="modal yellow">
+      <button class="close" data-close="rankingOverlay">×</button>
+      <div class="modal-content">
+        <img class="modal-logo" src="assets/selo.png" alt="Bolão da Lucena 2026">
+        <h2 class="modal-title">Placar dos participantes</h2>
+        <div class="ranking-wrap" id="rankingContent"></div>
+        <div class="admin">
+          <details id="adminDetails">
+            <summary><b>Área de apuração</b> — lançar placar oficial para calcular pontos</summary>
+            <div id="adminPanel" style="display:none">
+              <div class="form-grid">
+                <div class="field"><label>Jogo</label><select id="adminGame"></select></div>
+                <div class="field"><label>Placar Brasil/Time A</label><input id="officialA" type="number" min="0"></div>
+                <div class="field"><label>Placar adversário/Time B</label><input id="officialB" type="number" min="0"></div>
+                <div class="field full"><label>Jogadores que marcaram gol</label><div id="officialScorerFields" class="scorer-fields"></div></div>
+              </div>
+              <div class="actions"><button class="btn btn-primary" id="saveOfficial">Salvar e recalcular</button><button class="btn btn-dark" id="exportCsv">Exportar CSV</button><button class="btn btn-dark" id="clearAllData">Zerar lista</button></div>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="adminPassOverlay" role="dialog" aria-modal="true">
+    <div class="modal yellow" style="max-width:520px;min-height:auto">
+      <button class="close" data-close="adminPassOverlay">×</button>
+      <div class="modal-content">
+        <h2 class="modal-title" style="font-size:2.2rem">Área de apuração</h2>
+        <div class="form-card">
+          <form id="adminPassForm">
+            <div class="field full">
+              <label>Senha</label>
+              <input id="adminPassInput" type="password" autocomplete="current-password" required>
+            </div>
+            <div class="actions">
+              <button class="btn btn-primary" type="submit">Entrar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="overlay" id="consultOverlay" role="dialog" aria-modal="true">
+    <div class="modal yellow" style="max-width:560px;min-height:auto">
+      <button class="close" data-close="consultOverlay">×</button>
+      <div class="modal-content">
+        <h2 class="modal-title" style="font-size:2.15rem">Consultar placar</h2>
+        <div class="form-card">
+          <form id="consultForm">
+            <input type="hidden" id="consultGameId">
+            <div class="field full">
+              <label>Matrícula</label>
+              <input id="consultMatricula" inputmode="numeric" autocomplete="off" required>
+            </div>
+            <div class="notice">A consulta é liberada para quem já registrou palpite com a matrícula informada.</div>
+            <div class="actions">
+              <button class="btn btn-primary" type="submit">🏆 Ver placar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Mensagem</div>
+  <script>
+    const CONFIG = {
+      TESTE_PRIMEIRO_JOGO_ABERTO: true,
+      VOTACAO_INICIO: '08:00',
+      VOTACAO_FIM: '12:00',
+      TZ_LABEL: 'Horário de Brasília',
+      STORAGE_BETS: 'bolao_lucena_2026_bets_v1',
+      STORAGE_RESULTS: 'bolao_lucena_2026_results_v1',
+      STORAGE_UNLOCKED: 'bolao_lucena_2026_unlocked_rankings_v1',
+      SUPABASE_URL: 'https://vxwlzfidbcdzdusenxns.supabase.co',
+      SUPABASE_ANON_KEY: 'sb_publishable_lufszmzag1-zfj1rdn3ByA__mO7T9jQ'
+    };
+
+    const GAMES = [
+      { id:'bra-mar', date:'2026-06-13', time:'19:00', label:'13 de junho, sábado', city:'Nova Jersey/Nova York', a:'Brasil', b:'Marrocos', flagA:'assets/brasil.png', flagB:'assets/marrocos.png' },
+      { id:'bra-hai', date:'2026-06-19', time:'21:30', label:'19 de junho, sexta-feira', city:'Filadélfia', a:'Brasil', b:'Haiti', flagA:'assets/brasil.png', flagB:'assets/haiti.png' },
+      { id:'sco-bra', date:'2026-06-24', time:'19:00', label:'24 de junho, quarta-feira', city:'Miami', a:'Escócia', b:'Brasil', flagA:'assets/escocia.png', flagB:'assets/brasil.png' }
+    ];
+
+    const PLAYERS = {
+      'Brasil':[
+        'Alisson','Ederson','Weverton','Alex Sandro','Bremer','Danilo','Douglas Santos','Gabriel Magalhães','Ibañez','Léo Pereira','Marquinhos','Bruno Guimarães','Éderson','Casemiro','Danilo Santos','Fabinho','Lucas Paquetá','Endrick','Gabriel Martinelli','Igor Thiago','Luiz Henrique','Matheus Cunha','Neymar','Raphinha','Rayan','Vinicius Júnior'
+      ],
+      'Marrocos':[
+        'Yassine Bounou','Munir El Kajoui','Reda Tagnaouti','Noussair Mazraoui','Anass Salah-Eddine','Youssef Belammari','Achraf Hakimi','Zakaria El Ouahdi','Marwane Saâdane','Chadi Riad','Redouane Halhal','Issa Diop','Samir El Mourabet','Ayyoub Bouaddi','Neil El Aynaoui','Sofyan Amrabat','Azzedine Ounahi','Bilal El Khannouss','Ismael Saibari','Amine Sbaï','Chemsdine Talbi','Soufiane Rahimi','Ayoub El Kaabi','Brahim Díaz','Gessime Yassine','Ayoube Amaimouni'
+      ],
+      'Escócia':[
+        'Craig Gordon','Angus Gunn','Liam Kelly','Grant Hanley','Jack Hendry','Aaron Hickey','Dom Hyam','Scott McKenna','Nathan Patterson','Anthony Ralston','Andy Robertson','John Souttar','Kieran Tierney','Ryan Christie','Findlay Curtis','Lewis Ferguson','Ben Gannon-Doak','Tyler Fletcher','John McGinn','Kenny McLean','Scott McTominay','Che Adams','Lyndon Dykes','George Hirst','Lawrence Shankland','Ross Stewart'
+      ],
+      'Haiti':[
+        'Johnny Placide','Alexandre Pierre','Josué Duverger','Carlens Arcus','Wilguens Pauguain','Duke Lacroix','Martin Experience','JK Duverne','Ricardo Ade','Hannes Delcroix','Keeto Thermoncy','Leverton Pierre','Carl-Fred Sainthe','Jean-Jacques Danley','Jeanricner Bellegarde','Pierre Woodenski','Dominique Simon','Louicius Deedson','Ruben Providence','Josué Casimir','Derrick Etienne','Wilson Isidor','Duckens Nazon','Frantzdy Pierrot','Yassin Fortune','Lenny Joseph'
+      ]
+    };
+
+    const $ = (s, root=document) => root.querySelector(s);
+    const $$ = (s, root=document) => [...root.querySelectorAll(s)];
+    let selectedGame = null;
+    let lastVoucher = null;
+    let adminAuthenticated = false;
+    let adminPassword = '';
+    const supabaseClient = (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase) ? window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY) : null;
+
+    function read(key, fallback){ try { return JSON.parse(localStorage.getItem(key)) ?? fallback } catch { return fallback } }
+    function write(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
+    function bets(){ return read(CONFIG.STORAGE_BETS, []); }
+    function results(){ return read(CONFIG.STORAGE_RESULTS, {}); }
+    function unlockedRankings(){ return read(CONFIG.STORAGE_UNLOCKED, []); }
+    function unlockRanking(gameId){ const ids = new Set(unlockedRankings()); ids.add(gameId); write(CONFIG.STORAGE_UNLOCKED, [...ids]); }
+    function canViewRanking(gameId=null){ const ids = unlockedRankings(); return gameId ? ids.includes(gameId) : ids.length > 0; }
+    function mapRemoteBet(b){ return { id:b.codigo||b.id, gameId:b.game_id, gameTitle:b.game_title, gameDate:b.game_date, nome:b.nome, matricula:b.matricula, setor:b.setor, scoreA:Number(b.score_a), scoreB:Number(b.score_b), scorer:b.scorer, createdAt:b.created_at }; }
+    function mapRemoteResult(r){ return { a:Number(r.official_a), b:Number(r.official_b), scorers:Array.isArray(r.scorers_norm) ? r.scorers_norm.join(', ') : (r.scorers||''), savedAt:r.saved_at }; }
+    async function syncFromSupabase(){
+      if(!supabaseClient) return;
+      const { data:betData, error:betError } = await supabaseClient.from('bolao_palpites').select('*').order('created_at', { ascending:true });
+      if(!betError && Array.isArray(betData)) write(CONFIG.STORAGE_BETS, betData.map(mapRemoteBet));
+      const { data:resData, error:resError } = await supabaseClient.from('bolao_resultados').select('*');
+      if(!resError && Array.isArray(resData)){ const obj={}; resData.forEach(r=>obj[r.game_id]=mapRemoteResult(r)); write(CONFIG.STORAGE_RESULTS,obj); }
+    }
+    async function saveBetToSupabase(data){
+      if(!supabaseClient) return { ok:true };
+      const payload={ codigo:data.id, game_id:data.gameId, game_title:data.gameTitle, game_date:data.gameDate, nome:data.nome, matricula:data.matricula, setor:data.setor, score_a:data.scoreA, score_b:data.scoreB, scorer:data.scorer };
+      const { error } = await supabaseClient.from('bolao_palpites').insert(payload);
+      if(error){ return { ok:false, error }; }
+      return { ok:true };
+    }
+    async function saveResultToSupabase(gameId,a,b,scorers){
+      if(!supabaseClient) return { ok:false, error:{message:'Supabase não configurado'} };
+      const { error } = await supabaseClient.rpc('bolao_salvar_resultado', { p_senha: adminPassword, p_game_id: gameId, p_a: Number(a), p_b: Number(b), p_scorers: scorers });
+      if(error){ return { ok:false, error }; }
+      return { ok:true };
+    }
+    async function clearAllFromSupabase(){
+      if(!supabaseClient) return { ok:false, error:{message:'Supabase não configurado'} };
+      const { error } = await supabaseClient.rpc('bolao_apagar_todos_palpites', { p_senha: adminPassword });
+      if(error){ return { ok:false, error }; }
+      return { ok:true };
+    }
+    async function validateAdminPassword(pass){
+      if(!supabaseClient) return false;
+      const { data, error } = await supabaseClient.rpc('bolao_validar_admin', { p_senha: pass });
+      return !error && data === true;
+    }
+    function pad(n){ return String(n).padStart(2,'0'); }
+    function parseLocal(date, time){ const [y,m,d]=date.split('-').map(Number); const [h,mi]=time.split(':').map(Number); return new Date(y,m-1,d,h,mi,0,0); }
+    function openTime(game){ return parseLocal(game.date, CONFIG.VOTACAO_INICIO); }
+    function closeTime(game){ return parseLocal(game.date, CONFIG.VOTACAO_FIM); }
+    function now(){ return new Date(); }
+    function testClose(){ const d = new Date(); d.setHours(23,59,59,999); return d; }
+    function status(game){
+      const n = now();
+      if(CONFIG.TESTE_PRIMEIRO_JOGO_ABERTO && game.id === GAMES[0].id) return {type:'open', label:'Aberto para teste', end:testClose(), isTest:true};
+      const open = openTime(game), close = closeTime(game);
+      if(n < open) return {type:'locked', label:'Aguardando abertura', end:open};
+      if(n >= open && n < close) return {type:'open', label:'Bolão aberto', end:close};
+      return {type:'closed', label:'Bolão encerrado', end:null};
+    }
+    function diffLabel(target){
+      let ms = target - now();
+      if(ms <= 0) return '00:00:00';
+      const d = Math.floor(ms/86400000); ms%=86400000;
+      const h = Math.floor(ms/3600000); ms%=3600000;
+      const m = Math.floor(ms/60000); ms%=60000;
+      const s = Math.floor(ms/1000);
+      return (d ? d+'d ' : '') + `${pad(h)}:${pad(m)}:${pad(s)}`;
+    }
+    function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(window.__toast); window.__toast=setTimeout(()=>t.classList.remove('show'), 2600); }
+    function openOverlay(id){ const overlay=$('#'+id); overlay.classList.add('show'); document.body.classList.add('modal-open'); overlay.scrollTop=0; const modal=overlay.querySelector('.modal'); if(modal) modal.scrollTop=0; }
+    function closeOverlay(id){ $('#'+id).classList.remove('show'); document.body.classList.remove('modal-open'); }
+
+    function openConsult(gameId=''){
+      $('#consultGameId').value = gameId || '';
+      $('#consultMatricula').value = '';
+      openOverlay('consultOverlay');
+      setTimeout(()=>$('#consultMatricula')?.focus(), 120);
+    }
+    async function submitConsult(e){
+      e.preventDefault();
+      await syncFromSupabase();
+      const matricula = normalize($('#consultMatricula').value);
+      const gameId = $('#consultGameId').value;
+      const all = bets();
+      const hasBet = all.some(b => normalize(b.matricula) === matricula && (!gameId || b.gameId === gameId));
+      if(!hasBet){
+        toast(gameId ? 'Não encontramos palpite dessa matrícula neste jogo.' : 'Não encontramos palpite registrado para essa matrícula.');
+        return;
+      }
+      closeOverlay('consultOverlay');
+      renderRanking(gameId || null);
+      openOverlay('rankingOverlay');
+    }
+
+    function renderGames(){
+      const wrap = $('#games');
+      wrap.innerHTML = GAMES.map(game=>{
+        const st = status(game);
+        const open = st.type === 'open';
+        const text = open ? 'Palpites encerram em' : st.type === 'locked' ? 'Libera em' : 'Status';
+        const btn = open ? `<button class="btn btn-yellow play" data-bet="${game.id}">⚽ Fazer meu palpite</button>` : `<button class="btn btn-dark play disabled" disabled>${st.type==='closed'?'Bolão encerrado':'Aguardando o dia do jogo'}</button>`;
+        const rankingBtn = `<button class="btn btn-primary" data-consult="${game.id}">🏆 Consultar placar</button>`;
+        return `<article class="game-card ${st.type}" data-game-card="${game.id}">
+          <div class="game-top"><span class="pill ${open?'open':''} ${st.isTest?'test':''} ${st.type==='closed'?'closed':''}">${st.label}</span><div class="count">${text}<span data-count="${game.id}">${st.end?diffLabel(st.end):'Bolão encerrado'}</span></div></div>
+          <div class="match-line"><div class="team"><img src="${game.flagA}" alt="${game.a}">${game.a}</div><div class="versus">X</div><div class="team"><img src="${game.flagB}" alt="${game.b}">${game.b}</div></div>
+          <p class="date">${game.label} • ${game.time} • ${CONFIG.TZ_LABEL}</p><p class="hint">Votação disponível das ${CONFIG.VOTACAO_INICIO} às ${CONFIG.VOTACAO_FIM}. ${st.isTest?'Este primeiro jogo está liberado em modo teste.':''}</p>
+          <div class="card-footer">${btn}${rankingBtn}</div>
+        </article>`
+      }).join('');
+      $$('[data-bet]').forEach(b=>b.onclick=()=>openBet(b.dataset.bet));
+      $$('[data-consult]').forEach(b=>b.onclick=()=>openConsult(b.dataset.consult));
+    }
+    function tick(){
+      GAMES.forEach(g=>{
+        const el = $(`[data-count="${g.id}"]`); if(!el) return;
+        const st = status(g); el.textContent = st.end ? diffLabel(st.end) : 'Bolão encerrado';
+      });
+    }
+    function fillRules(){
+      $('#rulesGames').innerHTML = GAMES.map(g=>`<tr><td>${g.label}</td><td>${g.a} x ${g.b}</td><td>${g.time}</td></tr>`).join('');
+      $('#adminGame').innerHTML = GAMES.map(g=>`<option value="${g.id}">${g.a} x ${g.b} — ${g.label}</option>`).join('');
+    }
+
+    function openBet(id){
+      const game = GAMES.find(g=>g.id===id); const st=status(game);
+      if(st.type!=='open'){ toast(st.type==='closed'?'Bolão encerrado para este jogo.':'Este jogo ainda não abriu.'); return; }
+      selectedGame = game;
+      $('#gameId').value = game.id; $('#betTitle').textContent = `${game.a} x ${game.b}`;
+      $('#teamAName').innerHTML = `<img src="${game.flagA}" alt=""> ${game.a}`; $('#teamBName').innerHTML = `<img src="${game.flagB}" alt=""> ${game.b}`;
+      $('#betCountdown').innerHTML = `Bolão aberto • encerra em <b>${diffLabel(st.end)}</b>`;
+      $('#betFormCard').style.display='block'; $('#voucherBox').style.display='none'; $('#betForm').reset();
+      updateBetScorerFields();
+      const last = localStorage.getItem('bolao_lucena_last_user');
+      if(last){ try{ const u=JSON.parse(last); $('#nome').value=u.nome||''; $('#matricula').value=u.matricula||''; $('#setor').value=u.setor||''; }catch{} }
+      openOverlay('betOverlay');
+    }
+
+    function makeCode(){ return 'LU-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2,6).toUpperCase(); }
+    function normalize(v){ return String(v||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+    function playerOptions(team){ return (PLAYERS[team]||[]).map(name=>`<option value="${name.replace(/"/g,'&quot;')}">${name}</option>`).join(''); }
+    function scorerSelections(prefix){ return $$(`[data-scorer-prefix="${prefix}"]`).map(el=>el.value).filter(Boolean); }
+    function renderScorerFields(containerId, game, goalsA, goalsB, prefix){
+      const wrap = $('#'+containerId);
+      const total = Number(goalsA||0) + Number(goalsB||0);
+      if(!total){
+        wrap.innerHTML = '<div class="empty-goals">Selecione o placar para liberar a escolha dos jogadores que farão os gols.</div>';
+        return;
+      }
+      const teamBlocks = [
+        {team:game.a,count:Number(goalsA||0),side:'A'},
+        {team:game.b,count:Number(goalsB||0),side:'B'}
+      ].filter(item=>item.count>0).map(item=>`<div class="scorer-group"><h4>${item.team} — ${item.count} ${item.count===1?'gol':'gols'}</h4><div class="scorer-list">${Array.from({length:item.count}, (_,i)=>`<div class="scorer-row"><span>${i+1}º gol</span><select data-scorer-prefix="${prefix}" data-team="${item.team}"><option value=""></option>${playerOptions(item.team)}</select></div>`).join('')}</div></div>`).join('');
+      wrap.innerHTML = teamBlocks;
+    }
+    function updateBetScorerFields(){ if(selectedGame) renderScorerFields('scorerFields', selectedGame, Number($('#scoreA').value||0), Number($('#scoreB').value||0), 'bet'); }
+    function updateOfficialScorerFields(){ const game = GAMES.find(g=>g.id===$('#adminGame').value); if(game) renderScorerFields('officialScorerFields', game, Number($('#officialA').value||0), Number($('#officialB').value||0), 'official'); }
+    async function submitBet(e){
+      e.preventDefault(); const game = GAMES.find(g=>g.id===$('#gameId').value); const st=status(game);
+      if(st.type!=='open'){ toast('Bolão encerrado. O palpite não foi registrado.'); return; }
+      const data = {
+        id: makeCode(), gameId: game.id, gameTitle:`${game.a} x ${game.b}`, gameDate:game.label,
+        nome: $('#nome').value.trim(), matricula: $('#matricula').value.trim(), setor: $('#setor').value.trim(),
+        scoreA: Number($('#scoreA').value), scoreB: Number($('#scoreB').value), scorer: scorerSelections('bet').join(', '),
+        createdAt: new Date().toISOString()
+      };
+      const expectedScorers = data.scoreA + data.scoreB;
+      if(!data.nome || !data.matricula || !data.setor){ toast('Preencha todos os campos.'); return; }
+      if(expectedScorers > 0 && scorerSelections('bet').length !== expectedScorers){ toast('Selecione os jogadores correspondentes à quantidade de gols informada.'); return; }
+      let all = bets();
+      const existsSamePerson = all.find(b=>b.gameId===data.gameId && normalize(b.nome)===normalize(data.nome) && normalize(b.matricula)===normalize(data.matricula));
+      if(existsSamePerson){ toast('Este nome e esta matrícula já possuem palpite registrado neste jogo.'); return; }
+      const existsMatricula = all.find(b=>b.gameId===data.gameId && normalize(b.matricula)===normalize(data.matricula));
+      if(existsMatricula){ toast('Esta matrícula já possui palpite registrado neste jogo.'); return; }
+      const remote = await saveBetToSupabase(data);
+      if(!remote.ok){
+        const msg = String(remote.error?.message || 'Erro ao registrar palpite.');
+        if(msg.toLowerCase().includes('duplicate') || msg.includes('23505')) toast('Esta matrícula já possui palpite registrado neste jogo.');
+        else toast('Não foi possível salvar o palpite. Tente novamente.');
+        return;
+      }
+      all.push(data); write(CONFIG.STORAGE_BETS, all); unlockRanking(game.id); localStorage.setItem('bolao_lucena_last_user', JSON.stringify({nome:data.nome, matricula:data.matricula, setor:data.setor}));
+      lastVoucher = data; showVoucher(data, game); renderGames(); updateTopRankingButton();
+    }
+    function showVoucher(data, game){
+      $('#betFormCard').style.display='none'; const box=$('#voucherBox'); box.style.display='block';
+      box.innerHTML = `<div class="voucher" id="voucherCard"><img src="assets/selo.png" style="width:220px;max-width:70%;height:auto" alt=""><h3>Comprovante de Palpite</h3><div class="code">${data.id}</div><div class="voucher-grid"><div class="voucher-item"><span>Participante</span>${data.nome}</div><div class="voucher-item"><span>Matrícula</span>${data.matricula}</div><div class="voucher-item"><span>Setor</span>${data.setor}</div><div class="voucher-item"><span>Jogo</span>${data.gameTitle}</div><div class="voucher-item"><span>Palpite</span>${game.a} ${data.scoreA} x ${data.scoreB} ${game.b}</div><div class="voucher-item"><span>Jogadores</span>${data.scorer || '—'}</div><div class="voucher-item"><span>Data do jogo</span>${data.gameDate}</div><div class="voucher-item"><span>Registrado em</span>${new Date(data.createdAt).toLocaleString('pt-BR')}</div></div><p><b>Guarde este comprovante.</b> Ele confirma o registro do seu palpite no Bolão da Lucena 2026.</p></div><div class="actions"><button class="btn btn-yellow" id="downloadVoucher">⬇️ Baixar comprovante</button><button class="btn btn-primary" id="goRanking">🏆 Acompanhar placar</button></div>`;
+      $('#downloadVoucher').onclick = ()=>downloadVoucher(data, game); $('#goRanking').onclick=()=>{ closeOverlay('betOverlay'); renderRanking(game.id, data.id); openOverlay('rankingOverlay'); };
+    }
+    function downloadVoucher(data, game){
+      const c=document.createElement('canvas'); c.width=1200; c.height=780; const ctx=c.getContext('2d');
+      ctx.fillStyle='#ffdf00'; ctx.fillRect(0,0,c.width,c.height); ctx.fillStyle='#078927'; ctx.fillRect(35,35,c.width-70,c.height-70); ctx.strokeStyle='#ffdf00'; ctx.lineWidth=8; ctx.strokeRect(55,55,c.width-110,c.height-110);
+      ctx.fillStyle='#fff'; ctx.font='900 54px Arial'; ctx.textAlign='center'; ctx.fillText('BOLÃO DA LUCENA 2026',600,115); ctx.fillStyle='#ffdf00'; ctx.font='900 38px Arial'; ctx.fillText('COMPROVANTE DE PALPITE',600,170);
+      ctx.fillStyle='#fff'; ctx.font='900 44px Arial'; ctx.fillText(`${game.a} ${data.scoreA}  X  ${data.scoreB} ${game.b}`,600,255); ctx.font='800 30px Arial'; ctx.fillText(`Jogadores que fizeram gol: ${data.scorer || '—'}`,600,305);
+      ctx.textAlign='left'; ctx.font='700 28px Arial'; const lines=[['Nome',data.nome],['Matrícula',data.matricula],['Setor',data.setor],['Jogo',data.gameTitle],['Data',data.gameDate],['Registro',new Date(data.createdAt).toLocaleString('pt-BR')],['Código',data.id]]; let y=385;
+      lines.forEach(([k,v])=>{ctx.fillStyle='#ffdf00'; ctx.fillText(k+':',130,y); ctx.fillStyle='#fff'; ctx.fillText(String(v),350,y); y+=48;});
+      ctx.fillStyle='#ffdf00'; ctx.font='900 24px Arial'; ctx.textAlign='center'; ctx.fillText('Guarde este comprovante até a divulgação do resultado final.',600,710);
+      const a=document.createElement('a'); a.download=`comprovante-${data.matricula}-${data.gameId}.png`; a.href=c.toDataURL('image/png'); a.click();
+    }
+    function pointsFor(b){
+      const r=results()[b.gameId]; if(!r) return {resultado:0,placar:0,jogador:0,total:0};
+      const palpiteResultado = Number(b.scoreA)===Number(b.scoreB) ? 'empate' : (Number(b.scoreA)>Number(b.scoreB) ? 'a' : 'b');
+      const oficialResultado = Number(r.a)===Number(r.b) ? 'empate' : (Number(r.a)>Number(r.b) ? 'a' : 'b');
+      const resultado = palpiteResultado===oficialResultado ? 5 : 0;
+      const placar = Number(b.scoreA)===Number(r.a) && Number(b.scoreB)===Number(r.b) ? 10 : 0;
+      let jogador = 0;
+      if(placar > 0){
+        const oficiais = String(r.scorers||'').split(',').map(normalize).filter(Boolean);
+        const palpites = String(b.scorer||'').split(',').map(normalize).filter(Boolean);
+        const contagem = {};
+        oficiais.forEach(nome => contagem[nome] = (contagem[nome] || 0) + 1);
+        palpites.forEach(nome => {
+          if(contagem[nome] > 0){
+            jogador += 5;
+            contagem[nome] -= 1;
+          }
+        });
+      }
+      return {resultado,placar,jogador,total:resultado+placar+jogador};
+    }
+    async function renderRanking(gameFilter=null, highlight=null){
+      await syncFromSupabase();
+      let all=bets(); if(gameFilter) all=all.filter(b=>b.gameId===gameFilter);
+      const rows=all.map(b=>({...b, pts:pointsFor(b)})).sort((a,b)=>b.pts.total-a.pts.total || new Date(a.createdAt)-new Date(b.createdAt));
+      const title = gameFilter ? (GAMES.find(g=>g.id===gameFilter)?.a + ' x ' + GAMES.find(g=>g.id===gameFilter)?.b) : 'Todos os jogos';
+      if(!rows.length){ $('#rankingContent').innerHTML=`<div class="empty">Ainda não há palpites registrados para ${title}.</div>`; return; }
+      $('#rankingContent').innerHTML = `<h3 style="text-align:center;margin:0 0 12px;color:#064018">${title}</h3><table class="ranking-table"><thead><tr><th>#</th><th>Nome</th><th>Matrícula</th><th>Setor</th><th>Jogo</th><th>Palpite</th><th>Jogadores</th><th>Pontos</th></tr></thead><tbody>${rows.map((b,i)=>`<tr class="${highlight===b.id?'own':''}"><td>${i+1}</td><td>${b.nome}</td><td>${b.matricula}</td><td>${b.setor}</td><td>${b.gameTitle}</td><td>${b.scoreA} x ${b.scoreB}</td><td>${b.scorer}</td><td>${b.pts.total}</td></tr>`).join('')}</tbody></table>`;
+    }
+    async function saveOfficial(){
+      if(!adminAuthenticated){ toast('Acesso restrito.'); return; }
+      const gameId=$('#adminGame').value; const a=$('#officialA').value; const b=$('#officialB').value; if(a===''||b===''){toast('Informe o placar oficial.');return;}
+      const scorers = scorerSelections('official').join(', ');
+      if((Number(a)+Number(b)) > 0 && scorerSelections('official').length !== (Number(a)+Number(b))){ toast('Selecione os jogadores correspondentes à quantidade de gols oficial.'); return; }
+      const remote = await saveResultToSupabase(gameId, a, b, scorers);
+      if(!remote.ok){ toast('Não foi possível salvar o resultado no Supabase.'); return; }
+      const r=results(); r[gameId]={a:Number(a), b:Number(b), scorers:scorers, savedAt:new Date().toISOString()}; write(CONFIG.STORAGE_RESULTS,r); toast('Resultado salvo e pontuação recalculada.'); renderRanking(gameId);
+    }
+    async function exportCsv(){
+      if(!adminAuthenticated){ toast('Acesso restrito.'); return; }
+      await syncFromSupabase();
+      const header=['codigo','jogo','data_jogo','nome','matricula','setor','placar_a','placar_b','jogador','registro','pontos'];
+      const rows=bets().map(b=>[b.id,b.gameTitle,b.gameDate,b.nome,b.matricula,b.setor,b.scoreA,b.scoreB,b.scorer,new Date(b.createdAt).toLocaleString('pt-BR'),pointsFor(b).total]);
+      const csv=[header,...rows].map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(';')).join('\n');
+      const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='palpites-bolao-lucena.csv'; a.click(); URL.revokeObjectURL(a.href);
+    }
+    async function clearAllData(){
+      if(!adminAuthenticated){ toast('Acesso restrito.'); return; }
+      const ok = confirm('ATENÇÃO: isto vai apagar TODOS os palpites da lista no Supabase. Deseja continuar?');
+      if(!ok) return;
+      const ok2 = confirm('Confirme novamente: zerar a lista de participantes do bolão?');
+      if(!ok2) return;
+
+      const remote = await clearAllFromSupabase();
+      if(!remote.ok){
+        toast('Não foi possível zerar a lista. Verifique se a função bolao_apagar_todos_palpites existe.');
+        return;
+      }
+
+      localStorage.removeItem(CONFIG.STORAGE_BETS);
+      localStorage.removeItem(CONFIG.STORAGE_UNLOCKED);
+      localStorage.removeItem('bolao_lucena_last_user');
+      await syncFromSupabase();
+      renderRanking();
+      renderGames();
+      updateTopRankingButton();
+      toast('Lista zerada com sucesso.');
+    }
+    function updateTopRankingButton(){ const btn=$('#openRankingTop'); btn.disabled=false; btn.classList.remove('disabled'); btn.title='Consulte o placar usando a matrícula já registrada em um palpite.'; }
+
+    function setupMusic(){
+      const audio = $('#bgMusic');
+      const btn = $('#musicToggle');
+      if(!audio || !btn) return;
+
+      audio.volume = 0.5;
+      audio.loop = true;
+      audio.autoplay = true;
+      audio.muted = false;
+
+      function renderMusicState(){
+        const isOff = audio.paused || audio.muted;
+        btn.textContent = isOff ? '🔇' : '🔊';
+        btn.classList.toggle('muted', isOff);
+        btn.title = isOff ? 'Ativar música' : 'Silenciar música';
+        btn.setAttribute('aria-label', isOff ? 'Ativar música' : 'Silenciar música');
+      }
+
+      async function startMusic(){
+        audio.muted = false;
+        audio.volume = 0.5;
+        try {
+          await audio.play();
+        } catch(e) {
+          // Alguns navegadores bloqueiam áudio automático com som.
+          // O sistema tenta novamente no primeiro toque do usuário.
+        }
+        renderMusicState();
+      }
+
+      btn.addEventListener('click', async ()=>{
+        if(audio.paused || audio.muted){
+          audio.muted = false;
+          audio.volume = 0.5;
+          try { await audio.play(); } catch(e) { toast('Toque na tela para ativar a música.'); }
+        } else {
+          audio.pause();
+          audio.muted = true;
+        }
+        renderMusicState();
+      });
+
+      document.addEventListener('pointerdown', ()=>{
+        if(audio.paused || audio.muted){
+          audio.muted = false;
+          audio.volume = 0.5;
+          audio.play().catch(()=>{});
+          setTimeout(renderMusicState, 120);
+        }
+      }, {once:true});
+
+      startMusic();
+    }
+
+    $('#adminDetails').addEventListener('toggle', e=>{
+      if(!e.target.open) return;
+      if(adminAuthenticated){ $('#adminPanel').style.display='block'; return; }
+      e.target.open = false;
+      $('#adminPassInput').value = '';
+      openOverlay('adminPassOverlay');
+      setTimeout(()=>$('#adminPassInput')?.focus(), 150);
+    });
+
+    $('#adminPassForm').addEventListener('submit', async e=>{
+      e.preventDefault();
+      const pass = $('#adminPassInput').value;
+      const ok = await validateAdminPassword(pass);
+      if(!ok){ toast('Senha inválida.'); return; }
+      adminPassword = pass;
+      adminAuthenticated = true;
+      closeOverlay('adminPassOverlay');
+      $('#adminDetails').open = true;
+      $('#adminPanel').style.display = 'block';
+    });
+
+    document.addEventListener('click', e=>{ const close=e.target.closest('[data-close]'); if(close) closeOverlay(close.dataset.close); });
+    $('#openRules').onclick=()=>openOverlay('rulesOverlay'); $('#openRankingTop').onclick=()=>openConsult(''); $('#betForm').onsubmit=submitBet; $('#consultForm').onsubmit=submitConsult; $('#saveOfficial').onclick=saveOfficial; $('#exportCsv').onclick=exportCsv; $('#clearAllData').onclick=clearAllData;
+    $('#scoreA').addEventListener('input', updateBetScorerFields); $('#scoreB').addEventListener('input', updateBetScorerFields); $('#officialA').addEventListener('input', updateOfficialScorerFields); $('#officialB').addEventListener('input', updateOfficialScorerFields); $('#adminGame').addEventListener('change', updateOfficialScorerFields);
+    fillRules(); updateOfficialScorerFields(); setupMusic(); syncFromSupabase().then(()=>{ renderGames(); updateTopRankingButton(); }); setInterval(tick,1000); setInterval(()=>syncFromSupabase().then(renderGames),60000);
+  </script>
+</body>
+</html>
