@@ -557,7 +557,34 @@
       const csv=[header,...rows].map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(';')).join('\n');
       const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='palpites-bolao-lucena.csv'; a.click(); URL.revokeObjectURL(a.href);
     }
-    function clearData(){ if(!adminAuthenticated){ toast('Acesso restrito.'); return; } if(confirm('Limpar somente os dados salvos neste navegador? No Supabase, os registros continuam salvos.')){ localStorage.removeItem(CONFIG.STORAGE_BETS); localStorage.removeItem(CONFIG.STORAGE_RESULTS); localStorage.removeItem(CONFIG.STORAGE_UNLOCKED); renderRanking(); renderGames(); updateTopRankingButton(); toast('Dados locais de registro limpos.'); } }
+    async function clearData(){
+      if(!adminAuthenticated){ toast('Acesso restrito.'); return; }
+
+      const ok = confirm('Tem certeza que deseja apagar todos os palpites e resultados salvos no Supabase? Esta ação não pode ser desfeita.');
+      if(!ok) return;
+
+      const remote = await clearSupabaseData();
+      if(!remote.ok){
+        const msg = String(remote.error?.message || '');
+        if(msg.toLowerCase().includes('function') || msg.toLowerCase().includes('schema cache')){
+          toast('Função de limpeza não encontrada no Supabase. Rode o SQL da função antes.');
+        } else {
+          toast('Não foi possível limpar os registros no Supabase.');
+        }
+        return;
+      }
+
+      localStorage.removeItem(CONFIG.STORAGE_BETS);
+      localStorage.removeItem(CONFIG.STORAGE_RESULTS);
+      localStorage.removeItem(CONFIG.STORAGE_UNLOCKED);
+      localStorage.removeItem('bolao_lucena_last_user');
+
+      await syncFromSupabase();
+      renderRanking();
+      renderGames();
+      updateTopRankingButton();
+      toast('Registros apagados do Supabase com sucesso.');
+    }
     function updateTopRankingButton(){ const btn=$('#openRankingTop'); btn.disabled=false; btn.classList.remove('disabled'); btn.title=''; }
 
     
