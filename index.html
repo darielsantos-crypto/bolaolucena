@@ -621,7 +621,15 @@
 
       const remote = await clearAllFromSupabase();
       if(!remote.ok){
-        toast('Não foi possível zerar a lista. Verifique se a função bolao_apagar_todos_palpites existe.');
+        const msg = String(remote.error?.message || remote.error?.details || remote.error?.hint || 'Erro desconhecido.');
+        if(msg.toLowerCase().includes('senha')){
+          toast('Senha administrativa inválida. Entre novamente na área de apuração.');
+        } else if(msg.toLowerCase().includes('could not find') || msg.toLowerCase().includes('schema cache') || msg.toLowerCase().includes('function')){
+          toast('Função ainda não disponível no cache do Supabase. Rode o SQL final e aguarde alguns segundos.');
+        } else {
+          toast('Erro ao zerar lista: ' + msg.slice(0, 120));
+        }
+        console.error('Erro ao zerar lista:', remote.error);
         return;
       }
 
