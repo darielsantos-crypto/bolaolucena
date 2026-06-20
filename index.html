@@ -198,7 +198,7 @@
             <input type="hidden" id="gameId" />
             <div class="form-grid">
               <div class="field"><label>Nome completo</label><input id="nome" required></div>
-              <div class="field"><label>Matrícula</label><input id="matricula" required inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" placeholder="Ex.: 003232"><small class="field-help">Digite sua matrícula. O sistema completa automaticamente com zeros à esquerda até 6 dígitos.</small></div>
+              <div class="field"><label>Matrícula</label><input id="matricula" required inputmode="numeric" autocomplete="off" pattern="[0-9]+" placeholder="Ex.: 003232"><small class="field-help">Matrículas com até 6 dígitos recebem zeros à esquerda automaticamente. Identificadores numéricos maiores são preservados como foram digitados.</small></div>
               <div class="field full"><label>Setor</label><input id="setor" required></div>
               <div class="field full">
                 <label>Placar do jogo</label>
@@ -372,8 +372,8 @@
     function unlockedRankings(){ return read(CONFIG.STORAGE_UNLOCKED, []); }
     function unlockRanking(gameId){ const ids = new Set(unlockedRankings()); ids.add(gameId); write(CONFIG.STORAGE_UNLOCKED, [...ids]); }
     function canViewRanking(gameId=null){ const ids = unlockedRankings(); return gameId ? ids.includes(gameId) : ids.length > 0; }
-    // Matrícula é a única chave de identidade do participante. Sempre usamos 6 dígitos.
-    // Ex.: 3232 e 003232 representam a mesma matrícula: 003232.
+    // A matrícula é a única chave de identidade. Valores de até 6 dígitos recebem zeros à esquerda.
+    // Ex.: 3232 e 003232 representam a mesma matrícula: 003232. Identificadores maiores são preservados.
     function normalizeMatricula(v){
       const digits=String(v||'').replace(/\D/g,'');
       if(!digits) return '';
@@ -528,7 +528,7 @@
       };
       const expectedScorers = data.scoreA + data.scoreB;
       if(!data.nome || !data.matricula || !data.setor){ toast('Preencha todos os campos.'); return; }
-      if(!/^\d{6}$/.test(data.matricula)){ toast('Informe uma matrícula numérica válida com até 6 dígitos.'); return; }
+      if(!/^\d{6,}$/.test(data.matricula)){ toast('Informe uma matrícula ou identificador numérico válido.'); return; }
       $('#matricula').value=data.matricula;
       if(expectedScorers > 0 && scorerSelections('bet').length !== expectedScorers){ toast('Selecione os jogadores correspondentes à quantidade de gols informada.'); return; }
       let all = bets();
@@ -765,7 +765,7 @@
 
     function prepareMatriculaInput(id){
       const input=$(id); if(!input) return;
-      input.addEventListener('input', ()=>{ input.value=String(input.value||'').replace(/\D/g,'').slice(0,6); });
+      input.addEventListener('input', ()=>{ input.value=String(input.value||'').replace(/\D/g,''); });
       input.addEventListener('blur', ()=>{ input.value=normalizeMatricula(input.value); });
     }
     prepareMatriculaInput('#matricula');
