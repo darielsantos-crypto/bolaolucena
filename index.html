@@ -158,6 +158,8 @@
     }
     @media print{.actions,.card-footer,.close,.admin{display:none!important}body{background:#fff}.modal{box-shadow:none}.overlay{position:static;display:block;background:#fff}}
 
+
+    .result-summary{display:grid;gap:12px;margin:0 0 16px}.result-card{background:linear-gradient(135deg,#063f19,#087f2a);border:2px solid #ffe000;color:#fff;border-radius:18px;padding:14px;text-align:center;box-shadow:0 10px 22px rgba(0,0,0,.16)}.result-card.pending{background:#355641;border-color:rgba(255,255,255,.55)}.result-card strong{display:block;color:#ffe000;font-size:1.1rem;margin-bottom:5px}.result-card .result-score{font-family:var(--font-title);font-size:1.75rem;line-height:1;margin:6px 0;color:#fff}.scoreboard-note{margin:0 0 12px;text-align:center;font-weight:800;color:#064018}.scoreboard-table td,.scoreboard-table th{text-align:center}.scoreboard-table td:nth-child(2),.scoreboard-table td:nth-child(4){text-align:left}.pending-score{color:#777;font-weight:900}.apurar{background:#ffe000;color:#064018;border:2px solid #064018}
     .sound-toggle{position:fixed;top:14px;right:14px;z-index:20;background:linear-gradient(180deg,#fff36a,#ffdf00);color:#063d18;border:2px solid #063d18;border-radius:999px;padding:10px 14px;font-weight:900;box-shadow:0 10px 24px rgba(0,0,0,.22)}
     .sound-toggle.muted{background:#002f15;color:#fff;border-color:#ffe000}
     .gate-text{font-weight:800;text-align:center;line-height:1.35;margin:0 0 14px;color:#064018}
@@ -240,7 +242,7 @@
           <p><b>Bônus de jogador:</b> só vale para quem acertou o placar exato. Se o placar não estiver exato, os jogadores escolhidos não somam pontos.</p>
           <p>Exemplo: se o palpite for 2 x 1, o resultado oficial for 2 x 1 e a pessoa acertar 3 jogadores, ela soma <b>10 + 15 = 25 pontos</b>. Se o palpite for 2 x 0 e o vencedor estiver correto, mas o placar estiver errado, soma apenas <b>5 pontos</b>.</p>
           <h3>7. Vencedor e premiação</h3>
-          <p>Vence quem alcançar a maior pontuação acumulada ao final dos três jogos. Para concorrer à premiação final, o colaborador deverá participar dos três bolões. Em caso de empate na pontuação final, a organização poderá aplicar critério complementar de desempate.</p>
+          <p>Vence quem alcançar a maior pontuação acumulada ao final dos três jogos. Para concorrer à premiação final, o colaborador deverá participar dos três bolões. Em caso de empate na pontuação final entre participantes que tenham concluído os três jogos, haverá um sorteio entre os empatados para definir quem ficará com a camisa. <b>Na decisão final, a sorte também entra em campo.</b></p>
           <h3>8. Disposições gerais</h3>
           <p>Ao participar, o colaborador aceita integralmente este regulamento. Situações não previstas serão avaliadas pela organização, que também fará a validação dos palpites, a conferência das pontuações e a divulgação do resultado final.</p>
         </div>
@@ -279,9 +281,9 @@
       <button class="close" data-close="rankingGateOverlay">×</button>
       <div class="modal-content">
         <img class="modal-logo" src="assets/selo.png" alt="Bolão da Lucena 2026">
-        <h2 class="modal-title" style="font-size:2.2rem">Acessar palpites</h2>
+        <h2 class="modal-title" id="rankingGateTitle" style="font-size:2.2rem">Acessar palpites</h2>
         <div class="form-card">
-          <p class="gate-text">Informe sua matrícula para acessar. O placar só aparece para quem já registrou palpite no bolão.</p>
+          <p class="gate-text" id="rankingGateText">Informe sua matrícula para acessar. O placar só aparece para quem já registrou palpite no bolão.</p>
           <form id="rankingGateForm">
             <input type="hidden" id="rankingGateGame" />
             <div class="field full">
@@ -289,7 +291,7 @@
               <input id="rankingGateMatricula" inputmode="numeric" autocomplete="off" required>
             </div>
             <div class="actions">
-              <button class="btn btn-primary" type="submit">🏆 Ver palpites</button>
+              <button class="btn btn-primary" id="rankingGateSubmit" type="submit">🏆 Ver palpites</button>
             </div>
           </form>
         </div>
@@ -360,6 +362,7 @@
     let adminPassword = '';
     let rankingAuthorizedMatricula = '';
     let rankingAuthorizedGame = null;
+    let rankingAuthorizedMode = 'bets';
     const supabaseClient = (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase) ? window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY) : null;
 
     function read(key, fallback){ try { return JSON.parse(localStorage.getItem(key)) ?? fallback } catch { return fallback } }
@@ -450,15 +453,17 @@
         const text = open ? 'Palpites encerram em' : st.type === 'locked' ? 'Libera em' : 'Status';
         const btn = open ? `<button class="btn btn-yellow play" data-bet="${game.id}">⚽ Fazer meu palpite</button>` : `<button class="btn btn-dark play disabled" disabled>${st.type==='closed'?'Bolão encerrado':'Aguardando o dia do jogo'}</button>`;
         const rankingBtn = `<button class="btn btn-primary" data-ranking="${game.id}">🏆 Ver palpites</button>`;
+        const scoreBtn = `<button class="btn apurar" data-scoreboard="${game.id}">📊 Apurar pontuação</button>`;
         return `<article class="game-card ${st.type}" data-game-card="${game.id}">
           <div class="game-top"><span class="pill ${open?'open':''} ${st.type==='closed'?'closed':''}">${st.label}</span><div class="count">${text}<span data-count="${game.id}">${st.end?diffLabel(st.end):'Bolão encerrado'}</span></div></div>
           <div class="match-line"><div class="team"><img src="${game.flagA}" alt="${game.a}">${game.a}</div><div class="versus">X</div><div class="team"><img src="${game.flagB}" alt="${game.b}">${game.b}</div></div>
           <p class="date">${game.label} • ${game.time} • ${CONFIG.TZ_LABEL}</p><p class="hint">${voteWindowLabel(game)}</p>
-          <div class="card-footer">${btn}${rankingBtn}</div>
+          <div class="card-footer">${btn}${rankingBtn}${scoreBtn}</div>
         </article>`
       }).join('');
       $$('[data-bet]').forEach(b=>b.onclick=()=>openBet(b.dataset.bet));
-      $$('[data-ranking]').forEach(b=>b.onclick=()=>requestRankingAccess(b.dataset.ranking));
+      $$('[data-ranking]').forEach(b=>b.onclick=()=>requestRankingAccess(b.dataset.ranking,'bets'));
+      $$('[data-scoreboard]').forEach(b=>b.onclick=()=>openScoreboardPublic(b.dataset.scoreboard));
     }
     function tick(){
       GAMES.forEach(g=>{
@@ -583,31 +588,84 @@
       const m = normalize(matricula);
       return bets().some(b=>normalize(b.matricula)===m && (!gameFilter || b.gameId===gameFilter));
     }
-    async function requestRankingAccess(gameFilter=null){
+    function gameTitleById(gameId){
+      const g=GAMES.find(x=>x.id===gameId);
+      return g ? `${g.a} x ${g.b}` : 'Jogo';
+    }
+    async function requestRankingAccess(gameFilter=null, mode='bets'){
       await syncFromSupabase();
-      if(adminAuthenticated){ rankingAuthorizedMatricula=''; rankingAuthorizedGame=gameFilter; renderRanking(gameFilter); openOverlay('rankingOverlay'); return; }
+      rankingAuthorizedMode=mode;
+      if(adminAuthenticated){
+        rankingAuthorizedMatricula='';
+        rankingAuthorizedGame=gameFilter;
+        if(mode==='scores') renderScoreboard(gameFilter); else renderRanking(gameFilter);
+        openOverlay('rankingOverlay');
+        return;
+      }
       const last = localStorage.getItem('bolao_lucena_last_user');
       if(last){ try{ const u=JSON.parse(last); if(u.matricula) $('#rankingGateMatricula').value=u.matricula; }catch{} }
       $('#rankingGateGame').value = gameFilter || '';
+      $('#rankingGateTitle').textContent = mode==='scores' ? 'Acessar apuração' : 'Acessar palpites';
+      $('#rankingGateText').textContent = mode==='scores'
+        ? 'Informe sua matrícula. A apuração só é liberada para quem registrou palpite neste jogo.'
+        : 'Informe sua matrícula para acessar. Os palpites só aparecem para quem já registrou palpite neste jogo.';
+      $('#rankingGateSubmit').textContent = mode==='scores' ? '📊 Ver apuração' : '🏆 Ver palpites';
       openOverlay('rankingGateOverlay');
       setTimeout(()=>$('#rankingGateMatricula')?.focus(), 150);
     }
+    async function openScoreboardPublic(gameFilter){
+      await syncFromSupabase();
+      rankingAuthorizedMode='scores';
+      rankingAuthorizedMatricula='';
+      rankingAuthorizedGame=gameFilter;
+      await renderScoreboard(gameFilter);
+      openOverlay('rankingOverlay');
+    }
+
     async function renderRanking(gameFilter=null, highlight=null){
       await syncFromSupabase();
-      if(!adminAuthenticated){
-        if(!rankingAuthorizedMatricula || !hasBetForAccess(gameFilter, rankingAuthorizedMatricula)){
-          closeOverlay('rankingOverlay');
-          requestRankingAccess(gameFilter);
-          return;
-        }
+      if(!adminAuthenticated && (!rankingAuthorizedMatricula || !hasBetForAccess(gameFilter, rankingAuthorizedMatricula))){
+        closeOverlay('rankingOverlay'); requestRankingAccess(gameFilter,'bets'); return;
       }
       let all=bets(); if(gameFilter) all=all.filter(b=>b.gameId===gameFilter);
       const rows=all.map(b=>({...b, pts:pointsFor(b)})).sort((a,b)=> adminAuthenticated ? (b.pts.total-a.pts.total || new Date(a.createdAt)-new Date(b.createdAt)) : (new Date(a.createdAt)-new Date(b.createdAt)) );
-      const title = gameFilter ? (GAMES.find(g=>g.id===gameFilter)?.a + ' x ' + GAMES.find(g=>g.id===gameFilter)?.b) : 'Todos os jogos';
+      const title = gameFilter ? gameTitleById(gameFilter) : 'Todos os jogos';
       if(!rows.length){ $('#rankingContent').innerHTML=`<div class="empty">Ainda não há palpites registrados para ${title}.</div>`; return; }
       const pointsHead = adminAuthenticated ? '<th>Pontos</th>' : '';
-      const accessInfo = adminAuthenticated ? '<div class="notice" style="margin-top:0">Modo administrador: pontuação visível após apuração.</div>' : `<div class="notice" style="margin-top:0">Acesso liberado pela matrícula ${maskMatricula(rankingAuthorizedMatricula)}. A pontuação fica visível somente para a apuração administrativa.</div>`;
+      const accessInfo = adminAuthenticated ? '<div class="notice" style="margin-top:0">Modo administrador: pontuação visível após apuração.</div>' : `<div class="notice" style="margin-top:0">Acesso liberado pela matrícula ${maskMatricula(rankingAuthorizedMatricula)}. Nesta tela os pontos permanecem ocultos.</div>`;
       $('#rankingContent').innerHTML = `${accessInfo}<h3 style="text-align:center;margin:0 0 12px;color:#064018">${title}</h3><table class="ranking-table"><thead><tr><th>#</th><th>Nome</th><th>Matrícula</th><th>Setor</th><th>Jogo</th><th>Palpite</th><th>Jogadores</th>${pointsHead}</tr></thead><tbody>${rows.map((b,i)=>`<tr class="${highlight===b.id?'own':''}"><td>${i+1}</td><td>${b.nome}</td><td>${b.matricula}</td><td>${b.setor}</td><td>${b.gameTitle}</td><td>${b.scoreA} x ${b.scoreB}</td><td>${b.scorer}</td>${adminAuthenticated?`<td>${b.pts.total}</td>`:''}</tr>`).join('')}</tbody></table>`;
+    }
+    function resultCard(game){
+      const r=results()[game.id];
+      if(!r) return `<div class="result-card pending"><strong>${game.a} x ${game.b}</strong><div class="result-score">Aguardando apuração</div><div>O resultado oficial ainda não foi lançado.</div></div>`;
+      return `<div class="result-card"><strong>${game.a} x ${game.b}</strong><div class="result-score">${game.a} ${r.a} x ${r.b} ${game.b}</div><div><b>Jogadores:</b> ${r.scorers || '—'}</div></div>`;
+    }
+    async function renderScoreboard(gameFilter){
+      await syncFromSupabase();
+      if(!gameFilter){ $('#rankingContent').innerHTML='<div class="empty">Selecione um jogo para consultar a apuração.</div>'; return; }
+      const targetIndex=GAMES.findIndex(g=>g.id===gameFilter);
+      const included=GAMES.slice(0,targetIndex+1);
+      const all=bets().filter(b=>included.some(g=>g.id===b.gameId));
+      const people=new Map();
+      all.forEach(b=>{
+        const key=normalize(b.matricula);
+        if(!people.has(key)) people.set(key,{nome:b.nome,matricula:b.matricula,setor:b.setor,firstAt:new Date(b.createdAt).getTime(),scores:{},hasBet:{}});
+        const p=people.get(key);
+        if(new Date(b.createdAt).getTime()<p.firstAt){ p.firstAt=new Date(b.createdAt).getTime(); p.nome=b.nome; p.setor=b.setor; }
+        p.hasBet[b.gameId]=true;
+        p.scores[b.gameId]=results()[b.gameId] ? pointsFor(b).total : null;
+      });
+      const rows=[...people.values()].map(p=>{
+        const total=included.reduce((s,g)=>s+(Number(p.scores[g.id])||0),0);
+        return {...p,total};
+      }).sort((a,b)=>b.total-a.total || a.firstAt-b.firstAt);
+      const headers=included.map((g,i)=>`<th>Jogo ${i+1}</th>`).join('');
+      const body=rows.map((p,i)=>`<tr><td>${i+1}</td><td>${p.nome}</td><td>${p.matricula}</td><td>${p.setor}</td>${included.map(g=>`<td>${p.scores[g.id]===null || p.scores[g.id]===undefined ? '<span class="pending-score">—</span>' : p.scores[g.id]}</td>`).join('')}<td><b>${p.total}</b></td></tr>`).join('');
+      const pending=included.filter(g=>!results()[g.id]);
+      const notice=pending.length
+        ? `<p class="scoreboard-note">Jogos sem resultado oficial: ${pending.map(g=>gameTitleById(g.id)).join(' • ')}. Eles permanecem como <b>“Aguardando apuração”</b> e ainda não somam pontos.</p>`
+        : '<p class="scoreboard-note">Pontuação fechada e consolidada até este jogo.</p>';
+      $('#rankingContent').innerHTML=`<h3 style="text-align:center;margin:0 0 12px;color:#064018">Apuração consolidada — até ${gameTitleById(gameFilter)}</h3><div class="result-summary">${included.map(resultCard).join('')}</div>${notice}<table class="ranking-table scoreboard-table"><thead><tr><th>#</th><th>Nome</th><th>Matrícula</th><th>Setor</th>${headers}<th>Total</th></tr></thead><tbody>${body || '<tr><td colspan="99">Ainda não há palpites para esta apuração.</td></tr>'}</tbody></table>`;
     }
     async function saveOfficial(){
       if(!adminAuthenticated){ toast('Acesso restrito.'); return; }
@@ -649,7 +707,7 @@
       closeOverlay('adminPassOverlay');
       $('#adminDetails').open = true;
       $('#adminPanel').style.display = 'block';
-      if($('#rankingOverlay').classList.contains('show')) renderRanking(rankingAuthorizedGame);
+      if($('#rankingOverlay').classList.contains('show')) { if(rankingAuthorizedMode==='scores') renderScoreboard(rankingAuthorizedGame); else renderRanking(rankingAuthorizedGame); }
     });
 
 
@@ -665,7 +723,7 @@
       rankingAuthorizedMatricula = matricula;
       rankingAuthorizedGame = gameFilter;
       closeOverlay('rankingGateOverlay');
-      renderRanking(gameFilter);
+      if(rankingAuthorizedMode==='scores') renderScoreboard(gameFilter); else renderRanking(gameFilter);
       openOverlay('rankingOverlay');
     });
 
@@ -689,7 +747,7 @@
     ['click','touchstart','keydown'].forEach(ev=>document.addEventListener(ev, ()=>{ const a=$('#bgMusic'); if(a && (a.paused || a.muted)) startMusic(); }, {once:true, passive:true}));
 
     document.addEventListener('click', e=>{ const close=e.target.closest('[data-close]'); if(close) closeOverlay(close.dataset.close); });
-    $('#openRules').onclick=()=>openOverlay('rulesOverlay'); $('#openRankingTop').onclick=()=>requestRankingAccess(); $('#betForm').onsubmit=submitBet; $('#saveOfficial').onclick=saveOfficial; $('#exportCsv').onclick=exportCsv;
+    $('#openRules').onclick=()=>openOverlay('rulesOverlay'); $('#openRankingTop').onclick=()=>requestRankingAccess(null,'bets'); $('#betForm').onsubmit=submitBet; $('#saveOfficial').onclick=saveOfficial; $('#exportCsv').onclick=exportCsv;
     $('#scoreA').addEventListener('input', updateBetScorerFields); $('#scoreB').addEventListener('input', updateBetScorerFields); $('#officialA').addEventListener('input', updateOfficialScorerFields); $('#officialB').addEventListener('input', updateOfficialScorerFields); $('#adminGame').addEventListener('change', updateOfficialScorerFields);
     fillRules(); updateOfficialScorerFields(); startMusic(); syncFromSupabase().then(()=>{ renderGames(); updateTopRankingButton(); }); setInterval(tick,1000); setInterval(()=>syncFromSupabase().then(renderGames),60000);
   </script>
